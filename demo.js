@@ -1,0 +1,174 @@
+import maplibregl from "maplibre-gl";
+import * as windGL from "./src";
+
+// no access token needed
+
+var mapContainer1 = document.getElementById("map1");
+var mapContainer2 = document.getElementById("map2");
+
+var map1, map2;
+
+// use a MapLibre-compatible style everywhere
+var STYLE = "https://demotiles.maplibre.org/style.json";
+
+var configs = [
+  {
+    style: STYLE,
+    layers: [
+      { type: "sampleFill", after: null },
+      { type: "particles", after: null }
+    ],
+    flyTo: { zoom: 2 }
+  },
+  {
+    style: STYLE,
+    layers: [
+      {
+        type: "arrow",
+        after: null,
+        properties: {
+          "arrow-min-size": 80,
+          "arrow-color": [
+            "interpolate", ["linear"], ["get", "speed"],
+            0.0, "#3288bd",
+            10,  "#66c2a5",
+            20,  "#abdda4",
+            30,  "#e6f598",
+            40,  "#fee08b",
+            50,  "#fdae61",
+            60,  "#f46d43",
+            100.0, "#d53e4f"
+          ]
+        }
+      }
+    ],
+    flyTo: { pitch: 30, zoom: 2.5, center: [0, 45] }
+  },
+  {
+    style: STYLE,
+    layers: [
+      {
+        type: "particles",
+        after: null,
+        properties: {
+          // Speed changes with zoom
+          "particle-speed": [
+            "interpolate", ["linear"], ["zoom"],
+            0, 0.9,
+            8, 1.5
+          ],
+
+          // Color ramp driven by "speed" property
+          "particle-color": [
+            "interpolate", ["linear"], ["get", "speed"],
+            0,   "#3288bd",
+            10,  "#66c2a5",
+            20,  "#abdda4",
+            30,  "#e6f598",
+            40,  "#fee08b",
+            50,  "#fdae61",
+            60,  "#f46d43",
+            100, "#d53e4f"
+          ]
+        }
+      }
+    ],
+    flyTo: { zoom: 2, center: [50, -10] }
+  },
+  {
+    style: STYLE,
+    layers: [
+      {
+        type: "sampleFill",
+        after: null,
+        properties: {
+          "sample-fill-color": [
+            "interpolate", ["linear"], ["get", "speed"],
+            0,  "#ffffcc",
+            10, "#ffeda0",
+            20, "#fed976",
+            30, "#feb24c",
+            40, "#fd8d3c",
+            50, "#fc4e2a",
+            60, "#e31a1c",
+            70, "#bd0026",
+            80, "#800026"
+          ]
+        }
+      },
+      {
+        type: "arrow",
+        after: null,
+        properties: {
+          "arrow-min-size": 30,
+          "arrow-color": [
+            "interpolate", ["linear"], ["get", "speed"],
+            0,  "rgba(30,30,30,0)",
+            10, "rgba(30,30,30,0)",
+            20, "rgba(30,30,30,0.6)",
+            30, "rgba(30,30,30,0.8)",
+            40, "rgba(30,30,30,0.8)",
+            50, "rgba(30,30,30,0.8)",
+            60, "rgba(30,30,30,0.9)",
+            70, "rgba(30,30,30,1)",
+            80, "rgba(30,30,30,1)"
+          ],
+          "arrow-halo-color": "rgba(240,240,240,1)"
+        }
+      }
+    ],
+    flyTo: { zoom: 2 }
+  }
+];
+
+function firstSymbolLayerId(map) {
+  var layers = map.getStyle().layers;
+  for (var i = 0; i < layers.length; i++) {
+    if (layers[i].type === "symbol") return layers[i].id;
+  }
+  return undefined; // top of stack
+}
+
+function initializeConfig(container, cfg) {
+  var map = new maplibregl.Map({ container: container, style: cfg.style });
+  map.on("load", function () {
+    var beforeId = firstSymbolLayerId(map);
+    var source = windGL.source("https://storage-staging.ororatech.com/dev-de/webgis/fire-stories/palisades/wind/2025011206/tile.json");
+    cfg.layers.forEach(function (entry) {
+      var type = entry.type;
+      var after = entry.after;
+      var properties = entry.properties || {};
+      var layer = windGL[type](Object.assign({ id: type, source: source }, properties));
+      var before = (after !== undefined && after !== null) ? after : beforeId;
+      map.addLayer(layer, before);
+      // after: map.addLayer(layer, before);
+      if (type === "particles") {
+        window._particles = layer;                 // so you can poke it from DevTools
+        console.log("Particles propertySpec:", Object.keys(layer.propertySpec));
+      }
+    });
+  });
+  return map;
+}
+
+function nextConfig() {
+  mapContainer1.style.left = "-100%";
+  mapContainer1.style.transition = "left 1s";
+  mapContainer2.style.left = "0";
+  mapContainer2.style.transition = "left 1s";
+  setTimeout(function () {
+    if (configs[index].flyTo) map2.flyTo(configs[index].flyTo);
+    index = (index + 1) % configs.length;
+    if (map1) map1.remove();
+    map1 = map2;
+    mapContainer1.style.transition = "none";
+    mapContainer1.style.left = "100%";
+    var temp = mapContainer1; mapContainer1 = mapContainer2; mapContainer2 = temp;
+    map2 = initializeConfig(mapContainer2, configs[index]);
+  }, 1000);
+}
+
+var index = 0;
+map2 = initializeConfig(mapContainer2, configs[index]);
+nextConfig();
+document.getElementById("next").addEventListener("click", nextConfig);

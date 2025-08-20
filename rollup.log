@@ -1,0 +1,43 @@
+[36m
+[1mdemo.js[22m → [1mdocs/index.js[22m...[39m
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\demo.js
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\index.js
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\particles.js
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\arrow.js
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\sampleFill.js
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\source.js
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\util.js
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\layer.js
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\shaders\arrow.glsl
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\shaders\particles.glsl
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\shaders\sampleFill.glsl
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\tileID.js
+[32mcreated [1mdocs/index.js[22m in [1m920ms[22m[39m
+[36m
+[1msrc/index.js[22m → [1mdist/windgl.umd.js[22m...[39m
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\index.js
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\particles.js
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\sampleFill.js
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\arrow.js
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\source.js
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\layer.js
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\util.js
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\shaders\particles.glsl
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\shaders\arrow.glsl
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\shaders\sampleFill.glsl
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\tileID.js
+[32mcreated [1mdist/windgl.umd.js[22m in [1m605ms[22m[39m
+[36m
+[1msrc/index.js[22m → [1mdist/windgl.cjs.js, dist/windgl.esm.js[22m...[39m
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\index.js
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\sampleFill.js
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\source.js
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\particles.js
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\arrow.js
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\util.js
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\layer.js
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\shaders\sampleFill.glsl
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\shaders\arrow.glsl
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\shaders\particles.glsl
+[rollup] parsing C:\Users\jesse.friend\Downloads\windgl-master\windgl-master\src\tileID.js
+[32mcreated [1mdist/windgl.cjs.js, dist/windgl.esm.js[22m in [1m114ms[22m[39m

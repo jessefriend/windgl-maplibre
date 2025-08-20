@@ -1,0 +1,64 @@
+{
+  "name": "@jessefriend/windgl-maplibre",
+  "version": "0.1.1",
+  "description": "A MapLibre GL plugin for animated wind/GRIB visualization (forked from windgl).",
+  "main": "dist/windgl.cjs.js",
+  "module": "dist/windgl.esm.js",
+  "browser": "dist/windgl.umd.js",
+  "files": ["dist"],
+  "scripts": {
+    "prepublishOnly": "npm run build",
+    "dev": "rollup -c -w",
+    "build": "rollup -c",
+    "serve": "st -nc -i index.html",
+    "start": "run-p serve watch"
+  },
+  "keywords": [
+    "maplibre",
+    "maplibre-gl",
+    "wind",
+    "weather",
+    "grib",
+    "particles",
+    "visualization"
+  ],
+  "author": "Jesse Friend",
+  "contributors": [
+    "Vladimir Agafonkin",
+    "Jakub Hampl"
+  ],
+  "license": "ISC",
+  "devDependencies": {
+    "@rollup/plugin-buble": "^0.21.3",
+    "@rollup/plugin-commonjs": "^21.1.0",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^13.3.0",
+    "@rollup/pluginutils": "^4.2.1",
+    "glslify": "^7.0.0",
+    "glslx": "^0.1.26",
+    "maplibre-gl": "^2.4.0",
+    "npm-run-all": "^4.1.5",
+    "rollup": "^2.79.1",
+    "st": "^1.2.0"
+  },
+  "eslintConfig": {
+    "parserOptions": {
+      "ecmaVersion": 2018,
+      "sourceType": "module"
+    },
+    "extends": ["eslint:recommended"],
+    "env": {
+      "browser": true,
+      "commonjs": true,
+      "node": true,
+      "es6": true
+    }
+  },
+  "dependencies": {
+    "@maplibre/maplibre-gl-style-spec": "^22.0.0"
+  },
+  "peerDependencies": {
+    "maplibre-gl": ">=2"
+  },
+  "sideEffects": false
+}
