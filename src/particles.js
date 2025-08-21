@@ -39,6 +39,17 @@ class Particles extends Layer {
             parameters: ["zoom"]
           },
           "property-type": "data-constant"
+        },
+        "particle-size": {
+          type: "number",
+          minimum: 0.1,
+          default: 2.0,
+          transition: true,
+          expression: {
+            interpolated: true,
+            parameters: ["zoom"]
+          },
+          "property-type": "data-constant"
         }
       },
       options
@@ -370,6 +381,8 @@ class Particles extends Layer {
 
     gl.uniformMatrix4fv(program.u_matrix, false, matrix);
     gl.uniformMatrix4fv(program.u_data_matrix, false, data.matrix);
+
+    gl.uniform1f(program.u_particle_size, this.particleSize);
 
     gl.drawArrays(gl.POINTS, 0, this._numParticles);
   }

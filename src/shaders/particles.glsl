@@ -31,6 +31,8 @@ uniform float u_particles_res;
 uniform mat4 u_matrix;
 uniform mat4 u_offset;
 
+uniform float u_particle_size;
+
 attribute vec2 a_pos;
 
 varying vec2 v_tex_pos;
@@ -140,7 +142,7 @@ export void particleDrawVertex() {
 
     v_particle_pos = relativeCoordsWGS84;
 
-    gl_PointSize = 2.0;
+    gl_PointSize = u_particle_size;
     gl_Position = u_matrix * vec4(worldCoordsMerc, 0, 1);
 }
 

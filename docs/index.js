@@ -6219,9 +6219,9 @@
 
   function sampleFill (options) { return new SampleFill(options); }
 
-  var particleUpdate = function (gl) { return createProgram(gl, "precision highp float;attribute vec2 a_pos;varying vec2 h;void main(){h=a_pos,gl_Position=vec4(1.-2.*a_pos,0,1);}const vec3 f=vec3(12.9898,78.233,4375.85453);", "precision highp float;vec2 g(vec2 b,mat4 c){vec4 a=c*vec4(b,1,1);return a.xy/a.w;}uniform sampler2D u_particles,u_wind_top_left,u_wind_top_center,u_wind_top_right,u_wind_middle_left,u_wind_middle_center,u_wind_middle_right,u_wind_bottom_left,u_wind_bottom_center,u_wind_bottom_right;uniform vec2 u_wind_res,u_wind_min,u_wind_max;uniform bool u_initialize;uniform float u_rand_seed,u_speed_factor,u_drop_rate,u_drop_rate_bump;uniform mat4 u_data_matrix;varying vec2 h;const vec3 f=vec3(12.9898,78.233,4375.85453);float i(const vec2 b){float a=dot(f.xy,b);return fract(sin(a)*(f.z+a));}vec2 d(const vec2 a){return a.x>1.&&a.y>1.?texture2D(u_wind_bottom_right,a-vec2(1,1)).rg:a.x>0.&&a.y>1.?texture2D(u_wind_bottom_center,a-vec2(0,1)).rg:a.y>1.?texture2D(u_wind_bottom_left,a-vec2(-1,1)).rg:a.x>1.&&a.y>0.?texture2D(u_wind_middle_right,a-vec2(1,0)).rg:a.x>0.&&a.y>0.?texture2D(u_wind_middle_center,a-vec2(0,0)).rg:a.y>0.?texture2D(u_wind_middle_left,a-vec2(-1,0)).rg:a.x>1.?texture2D(u_wind_top_right,a-vec2(1,-1)).rg:a.x>0.?texture2D(u_wind_top_center,a-vec2(0,-1)).rg:texture2D(u_wind_top_left,a-vec2(-1,-1)).rg;}vec2 p(const vec2 e){vec2 a=1./u_wind_res,b=floor(e*u_wind_res)*a,c=fract(e*u_wind_res),j=d(b),k=d(b+vec2(a.x,0)),l=d(b+vec2(0,a.y)),m=d(b+a);return mix(mix(j,k,c.x),mix(l,m,c.x),c.y);}vec2 o(vec2 a){vec2 e=g(a,u_data_matrix),b=mix(u_wind_min,u_wind_max,p(e));float j=length(b)/length(u_wind_max);vec2 k=vec2(b.x,-b.y)*1e-4*u_speed_factor;a=fract(1.+a+k);vec2 c=(a+h)*u_rand_seed;float l=u_drop_rate+j*u_drop_rate_bump+smoothstep(.24,.5,length(a-vec2(.5,.5))*.7),m=step(1.-l,i(c));vec2 q=vec2(.5*i(c+1.3)+.25,.5*i(c+2.1)+.25);return mix(a,q,m);}void main(){vec4 b=texture2D(u_particles,h);vec2 a=vec2(b.r/255.+b.b,b.g/255.+b.a);a=o(a);if(u_initialize)for(int c=0;c<100;c++)a=o(a);gl_FragColor=vec4(fract(a*255.),floor(a*255.)/255.);}"); };
+  var particleUpdate = function (gl) { return createProgram(gl, "precision highp float;attribute vec2 a_pos;varying vec2 h;void main(){h=a_pos,gl_Position=vec4(1.-2.*a_pos,0,1);}const vec3 f=vec3(12.9898,78.233,4375.85453);", "precision highp float;vec2 g(vec2 b,mat4 c){vec4 a=c*vec4(b,1,1);return a.xy/a.w;}uniform sampler2D u_particles,u_wind_top_left,u_wind_top_center,u_wind_top_right,u_wind_middle_left,u_wind_middle_center,u_wind_middle_right,u_wind_bottom_left,u_wind_bottom_center,u_wind_bottom_right;uniform vec2 u_wind_res,u_wind_min,u_wind_max;uniform bool u_initialize;uniform mat4 u_data_matrix;uniform float u_rand_seed,u_speed_factor,u_drop_rate,u_drop_rate_bump;varying vec2 h;const vec3 f=vec3(12.9898,78.233,4375.85453);float i(const vec2 b){float a=dot(f.xy,b);return fract(sin(a)*(f.z+a));}vec2 d(const vec2 a){return a.x>1.&&a.y>1.?texture2D(u_wind_bottom_right,a-vec2(1,1)).rg:a.x>0.&&a.y>1.?texture2D(u_wind_bottom_center,a-vec2(0,1)).rg:a.y>1.?texture2D(u_wind_bottom_left,a-vec2(-1,1)).rg:a.x>1.&&a.y>0.?texture2D(u_wind_middle_right,a-vec2(1,0)).rg:a.x>0.&&a.y>0.?texture2D(u_wind_middle_center,a-vec2(0,0)).rg:a.y>0.?texture2D(u_wind_middle_left,a-vec2(-1,0)).rg:a.x>1.?texture2D(u_wind_top_right,a-vec2(1,-1)).rg:a.x>0.?texture2D(u_wind_top_center,a-vec2(0,-1)).rg:texture2D(u_wind_top_left,a-vec2(-1,-1)).rg;}vec2 p(const vec2 e){vec2 a=1./u_wind_res,b=floor(e*u_wind_res)*a,c=fract(e*u_wind_res),j=d(b),k=d(b+vec2(a.x,0)),l=d(b+vec2(0,a.y)),m=d(b+a);return mix(mix(j,k,c.x),mix(l,m,c.x),c.y);}vec2 o(vec2 a){vec2 e=g(a,u_data_matrix),b=mix(u_wind_min,u_wind_max,p(e));float j=length(b)/length(u_wind_max);vec2 k=vec2(b.x,-b.y)*1e-4*u_speed_factor;a=fract(1.+a+k);vec2 c=(a+h)*u_rand_seed;float l=u_drop_rate+j*u_drop_rate_bump+smoothstep(.24,.5,length(a-vec2(.5,.5))*.7),m=step(1.-l,i(c));vec2 q=vec2(.5*i(c+1.3)+.25,.5*i(c+2.1)+.25);return mix(a,q,m);}void main(){vec4 b=texture2D(u_particles,h);vec2 a=vec2(b.r/255.+b.b,b.g/255.+b.a);a=o(a);if(u_initialize)for(int c=0;c<100;c++)a=o(a);gl_FragColor=vec4(fract(a*255.),floor(a*255.)/255.);}"); };
 
-  var particleDraw = function (gl) { return createProgram(gl, "precision highp float;vec2 r(vec2 b){float a=-180.*b.y+90.;a=(180.-57.29578*log(tan(.785398+a*3.141593/360.)))/360.;return vec2(b.x,a);}vec2 g(vec2 b,mat4 c){vec4 a=c*vec4(b,1,1);return a.xy/a.w;}uniform sampler2D u_particles;uniform float u_particles_res;uniform mat4 u_matrix,u_offset;const vec3 f=vec3(12.9898,78.233,4375.85453);attribute float a_index;varying vec2 n;void main(){vec4 a=texture2D(u_particles,vec2(fract(a_index/u_particles_res),floor(a_index/u_particles_res)/u_particles_res));vec2 b=vec2(a.r/255.+a.b,a.g/255.+a.a),c=g(b,u_offset),e=r(c);n=b,gl_PointSize=2.,gl_Position=u_matrix*vec4(e,0,1);}", "precision highp float;vec2 g(vec2 b,mat4 c){vec4 a=c*vec4(b,1,1);return a.xy/a.w;}uniform sampler2D u_wind_top_left,u_wind_top_center,u_wind_top_right,u_wind_middle_left,u_wind_middle_center,u_wind_middle_right,u_wind_bottom_left,u_wind_bottom_center,u_wind_bottom_right,u_color_ramp;uniform vec2 u_wind_min,u_wind_max;uniform mat4 u_data_matrix;const vec3 f=vec3(12.9898,78.233,4375.85453);vec2 d(const vec2 a){return a.x>1.&&a.y>1.?texture2D(u_wind_bottom_right,a-vec2(1,1)).rg:a.x>0.&&a.y>1.?texture2D(u_wind_bottom_center,a-vec2(0,1)).rg:a.y>1.?texture2D(u_wind_bottom_left,a-vec2(-1,1)).rg:a.x>1.&&a.y>0.?texture2D(u_wind_middle_right,a-vec2(1,0)).rg:a.x>0.&&a.y>0.?texture2D(u_wind_middle_center,a-vec2(0,0)).rg:a.y>0.?texture2D(u_wind_middle_left,a-vec2(-1,0)).rg:a.x>1.?texture2D(u_wind_top_right,a-vec2(1,-1)).rg:a.x>0.?texture2D(u_wind_top_center,a-vec2(0,-1)).rg:texture2D(u_wind_top_left,a-vec2(-1,-1)).rg;}varying vec2 n;void main(){vec2 b=mix(u_wind_min,u_wind_max,d(g(n,u_data_matrix)));float a=length(b)/length(u_wind_max);vec2 c=vec2(fract(16.*a),floor(16.*a)/16.);gl_FragColor=texture2D(u_color_ramp,c);}"); };
+  var particleDraw = function (gl) { return createProgram(gl, "precision highp float;vec2 r(vec2 b){float a=-180.*b.y+90.;a=(180.-57.29578*log(tan(.785398+a*3.141593/360.)))/360.;return vec2(b.x,a);}vec2 g(vec2 b,mat4 c){vec4 a=c*vec4(b,1,1);return a.xy/a.w;}uniform sampler2D u_particles;uniform mat4 u_matrix,u_offset;uniform float u_particles_res,u_particle_size;const vec3 f=vec3(12.9898,78.233,4375.85453);attribute float a_index;varying vec2 n;void main(){vec4 a=texture2D(u_particles,vec2(fract(a_index/u_particles_res),floor(a_index/u_particles_res)/u_particles_res));vec2 b=vec2(a.r/255.+a.b,a.g/255.+a.a),c=g(b,u_offset),e=r(c);n=b,gl_PointSize=u_particle_size,gl_Position=u_matrix*vec4(e,0,1);}", "precision highp float;vec2 g(vec2 b,mat4 c){vec4 a=c*vec4(b,1,1);return a.xy/a.w;}uniform sampler2D u_wind_top_left,u_wind_top_center,u_wind_top_right,u_wind_middle_left,u_wind_middle_center,u_wind_middle_right,u_wind_bottom_left,u_wind_bottom_center,u_wind_bottom_right,u_color_ramp;uniform vec2 u_wind_min,u_wind_max;uniform mat4 u_data_matrix;const vec3 f=vec3(12.9898,78.233,4375.85453);vec2 d(const vec2 a){return a.x>1.&&a.y>1.?texture2D(u_wind_bottom_right,a-vec2(1,1)).rg:a.x>0.&&a.y>1.?texture2D(u_wind_bottom_center,a-vec2(0,1)).rg:a.y>1.?texture2D(u_wind_bottom_left,a-vec2(-1,1)).rg:a.x>1.&&a.y>0.?texture2D(u_wind_middle_right,a-vec2(1,0)).rg:a.x>0.&&a.y>0.?texture2D(u_wind_middle_center,a-vec2(0,0)).rg:a.y>0.?texture2D(u_wind_middle_left,a-vec2(-1,0)).rg:a.x>1.?texture2D(u_wind_top_right,a-vec2(1,-1)).rg:a.x>0.?texture2D(u_wind_top_center,a-vec2(0,-1)).rg:texture2D(u_wind_top_left,a-vec2(-1,-1)).rg;}varying vec2 n;void main(){vec2 b=mix(u_wind_min,u_wind_max,d(g(n,u_data_matrix)));float a=length(b)/length(u_wind_max);vec2 c=vec2(fract(16.*a),floor(16.*a)/16.);gl_FragColor=texture2D(u_color_ramp,c);}"); };
 
   /**
    * This layer simulates a particles system where the particles move according
@@ -6253,6 +6253,17 @@
             type: "number",
             minimum: 0,
             default: 0.75,
+            transition: true,
+            expression: {
+              interpolated: true,
+              parameters: ["zoom"]
+            },
+            "property-type": "data-constant"
+          },
+          "particle-size": {
+            type: "number",
+            minimum: 0.1,
+            default: 2.0,
             transition: true,
             expression: {
               interpolated: true,
@@ -6609,6 +6620,8 @@
       gl.uniformMatrix4fv(program.u_matrix, false, matrix);
       gl.uniformMatrix4fv(program.u_data_matrix, false, data.matrix);
 
+      gl.uniform1f(program.u_particle_size, this.particleSize);
+
       gl.drawArrays(gl.POINTS, 0, this._numParticles);
     };
 
@@ -6943,6 +6956,11 @@
               50,  "#fdae61",
               60,  "#f46d43",
               100, "#d53e4f"
+            ],
+
+            "particle-size": [
+                'interpolate', ['exponential', 2], ['zoom'],
+                2, 0.2, 11, 5, 20, 10
             ]
           }
         }
