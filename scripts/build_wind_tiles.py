@@ -57,6 +57,9 @@ import xarray as xr
 from scipy.interpolate import griddata
 from scipy.ndimage import map_coordinates
 
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from tqdm import tqdm
+
 # ----------------------------- helpers -----------------------------
 
 def parse_date_token(token: str) -> str:
@@ -328,6 +331,15 @@ def maybe_download(date_yyyymmddhh: str, model: str) -> Path | None:
 
 
 # ----------------------------- main -----------------------------
+def process_tile(z, x, y, U, V, umin, umax, vmin, vmax, tile_size, out_dir):
+    """Worker function for one tile (safe for multiprocessing)."""
+    U_tile, V_tile = resample_tile(U, V, z, x, y, tile_size)
+    R = to_byte(U_tile, umin, umax)
+    G = to_byte(V_tile, vmin, vmax)
+    tile_path = out_dir / str(z) / str(x) / f"{y}.png"
+    write_png(tile_path, R, G)
+    return (z, x, y)
+
 
 def main():
     ap = argparse.ArgumentParser(description="Build WindGL tiles (equirectangular) from GRIB.")
@@ -336,72 +348,75 @@ def main():
     ap.add_argument("--in-u", dest="in_u", help="Path to GRIB with U component (e.g., UGRD)")
     ap.add_argument("--in-v", dest="in_v", help="Path to GRIB with V component (e.g., VGRD)")
     ap.add_argument("--download", choices=["hrrr", "gfs"], help="Auto-download U/V via herbie")
-    ap.add_argument("--u-var", default="u10,u,UGRD", help="Comma list of candidate U var names")
-    ap.add_argument("--v-var", default="v10,v,VGRD", help="Comma list of candidate V var names")
-
     ap.add_argument("--out-root", default="./wind", help="Root output directory (default ./wind)")
     ap.add_argument("--minzoom", type=int, default=0)
     ap.add_argument("--maxzoom", type=int, default=3)
     ap.add_argument("--tile-size", type=int, default=1024)
-    ap.add_argument("--grid-res", type=float, default=0.25,
-                help="Target regular lat-lon grid resolution in degrees (default 0.25)")
-
-    ap.add_argument("--u-min", type=float, help="Force U min (m/s)")
-    ap.add_argument("--u-max", type=float, help="Force U max (m/s)")
-    ap.add_argument("--v-min", type=float, help="Force V min (m/s)")
-    ap.add_argument("--v-max", type=float, help="Force V max (m/s)")
+    ap.add_argument("--grid-res", type=float, default=0.25)
+    ap.add_argument("--u-min", type=float)
+    ap.add_argument("--u-max", type=float)
+    ap.add_argument("--v-min", type=float)
+    ap.add_argument("--v-max", type=float)
+    ap.add_argument("--bbox", nargs=4, type=float, metavar=("MINLON", "MINLAT", "MAXLON", "MAXLAT"))
+    ap.add_argument("--workers", type=int, default=os.cpu_count(), help="Number of worker processes")
     args = ap.parse_args()
-
+    
     date_token = parse_date_token(args.date)
+
+    # If --download is set, fetch with herbie
+    if args.download:
+        grib_path = maybe_download(date_token, args.download)
+        if grib_path is None:
+            sys.exit(1)
+        args.in_single = str(grib_path)  # plug into loader
+
+
     out_dir = Path(args.out_root) / date_token
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # Decide inputs
-    in_single = Path(args.in_single) if args.in_single else None
-    in_u = Path(args.in_u) if args.in_u else None
-    in_v = Path(args.in_v) if args.in_v else None
+    # Load dataset
+    U, V = load_uv_dataset(args.in_u, args.in_v, args.in_single)
 
-    if args.download:
-        p = maybe_download(date_token, args.download)
-        if p:
-            in_single = p  # one GRIB with both U and V
-        else:
-            print("Auto-download failed or herbie not installed.", file=sys.stderr)
-            sys.exit(2)
-
-    if not (in_single or (in_u and in_v)):
-        print("Provide --in (single GRIB) or both --in-u and --in-v, or use --download.", file=sys.stderr)
-        sys.exit(2)
-
-    u_names = tuple([s.strip() for s in args.u_var.split(",") if s.strip()])
-    v_names = tuple([s.strip() for s in args.v_var.split(",") if s.strip()])
-
-    U, V = load_uv_dataset(in_u, in_v, in_single, u_name_guess=u_names, v_name_guess=v_names)
-
-    # Global min/max (or forced)
-    if args.u_min is not None and args.u_max is not None and args.v_min is not None and args.v_max is not None:
+    # Min/max
+    if all(v is not None for v in (args.u_min, args.u_max, args.v_min, args.v_max)):
         umin, umax, vmin, vmax = args.u_min, args.u_max, args.v_min, args.v_max
     else:
         umin, umax, vmin, vmax = compute_global_minmax(U, V)
 
-    print(f"[info] U range: {umin:.2f}..{umax:.2f} m/s, V range: {vmin:.2f}..{vmax:.2f} m/s")
+    print(f"[info] U range: {umin:.2f}..{umax:.2f}, V range: {vmin:.2f}..{vmax:.2f}")
 
-    # Build tiles
+    # Build tile list
+    tasks = []
     for z in range(args.minzoom, args.maxzoom + 1):
         n = 2 ** z
         for y in range(n):
             for x in range(n):
-                U_tile, V_tile = resample_tile(U, V, z, x, y, args.tile_size)
-                R = to_byte(U_tile, umin, umax)
-                G = to_byte(V_tile, vmin, vmax)
-                tile_path = out_dir / str(z) / str(x) / f"{y}.png"
-                write_png(tile_path, R, G)
+                if args.bbox:
+                    minlon, minlat, maxlon, maxlat = args.bbox
+                    lon_left = 360 * x / n - 180
+                    lon_right = 360 * (x + 1) / n - 180
+                    lat_top = 90 - 180 * y / n
+                    lat_bottom = 90 - 180 * (y + 1) / n
+                    if lon_right < minlon or lon_left > maxlon or lat_bottom > maxlat or lat_top < minlat:
+                        continue
+                tasks.append((z, x, y))
+
+    print(f"[info] Generating {len(tasks)} tiles using {args.workers} workers...")
+
+    # Run in parallel with progress bar
+    with ProcessPoolExecutor(max_workers=args.workers) as exe:
+        futures = [
+            exe.submit(process_tile, z, x, y, U, V, umin, umax, vmin, vmax, args.tile_size, out_dir)
+            for (z, x, y) in tasks
+        ]
+        for f in tqdm(as_completed(futures), total=len(futures), desc="Tiles"):
+            _ = f.result()
 
     # Write tile.json
-    write_tilejson(out_dir / "tile.json", args.minzoom, args.maxzoom, args.tile_size, umin, umax, vmin, vmax)
+    write_tilejson(out_dir / "tile.json", args.minzoom, args.maxzoom,
+                   args.tile_size, umin, umax, vmin, vmax)
 
     print(f"[done] Wrote tiles to {out_dir} and {out_dir/'tile.json'}")
-    print("      Use in JS as: windGL.source('wind/{}/tile.json')".format(date_token))
 
 
 if __name__ == "__main__":
