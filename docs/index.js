@@ -6275,7 +6275,7 @@
             type: "number",
             minimum: 0,
             maximum: 1,
-            default: 0.005,
+            default: 0.05,
             transition: true,
             expression: {
               interpolated: true,
@@ -6291,7 +6291,7 @@
 
       this.dropRate = 0.003; // how often the particles move to a random place
       this.dropRateBump = 0.01; // drop rate increase relative to individual particle speed
-      this._numParticles = 65536;
+      this._numParticles = 15000;
       // This layer manages 2 kinds of tiles: data tiles (the same as other layers) and particle state tiles
       this._particleTiles = {};
 
@@ -6576,40 +6576,25 @@
       tile.particleStateTexture1 = temp;
     };
 
-    // Add a main render method that decides between normal and trail rendering
-    Particles.prototype.render = function render (gl, matrix) {
-      if (!this.windData) { return; }
-
-      var particleTrail = this.particleTrail || 0.05;
-      if (particleTrail > 0) {
-        this.renderWithTrails(gl, matrix);
-      } else {
-        this.renderNormal(gl, matrix);
-      }
-    };
-
-    // Normal rendering without trails
-    Particles.prototype.renderNormal = function renderNormal (gl, matrix) {
-      var this$1$1 = this;
-
-      this.visibleParticleTiles().forEach(function (tile) {
-        var found = this$1$1.findAssociatedDataTiles(tile);
-        if (!found) { return; } // Add this null check
-
-        this$1$1.draw(gl, matrix, this$1$1._particleTiles[tile], tile.viewMatrix(2), found);
-      });
-    };
-
     Particles.prototype.setupTrailRendering = function setupTrailRendering (gl) {
       var canvas = gl.canvas;
-      this.trailCanvas = Math.min(canvas.width, canvas.height, 1024);
+      // Increase resolution at higher zoom levels
+      var zoomFactor = Math.pow(2, Math.max(0, this.map.getZoom() - 10));
+      this.trailCanvas = Math.min(canvas.width, canvas.height, 1024 * Math.min(zoomFactor, 4));
       
-      // Create empty texture data instead of null
+      // Create empty texture data
       var emptyData = new Uint8Array(this.trailCanvas * this.trailCanvas * 4);
-      // Fill with transparent black
       emptyData.fill(0);
       
-      // Create trail accumulation textures with proper data
+      // Clean up existing textures/framebuffers if they exist
+      if (this.trailTexture) {
+        gl.deleteTexture(this.trailTexture);
+        gl.deleteTexture(this.tempTrailTexture);
+        gl.deleteFramebuffer(this.trailFramebuffer);
+        gl.deleteFramebuffer(this.tempTrailFramebuffer);
+      }
+      
+      // Create trail accumulation textures with higher resolution
       this.trailTexture = createTexture(gl, gl.LINEAR, emptyData, this.trailCanvas, this.trailCanvas);
       this.tempTrailTexture = createTexture(gl, gl.LINEAR, emptyData, this.trailCanvas, this.trailCanvas);
       
@@ -6629,6 +6614,37 @@
       this.createFadeShader(gl);
       
       this.trailEnabled = true;
+      this.lastZoom = this.map.getZoom();
+    };
+
+    // Add zoom change detection in render method
+    Particles.prototype.render = function render (gl, matrix) {
+      if (!this.windData) { return; }
+
+      // Recreate trail textures if zoom changed significantly
+      var currentZoom = this.map.getZoom();
+      if (Math.abs(currentZoom - (this.lastZoom || 0)) > 1) {
+        this.setupTrailRendering(gl);
+      }
+
+      var particleTrail = this.particleTrail || 0.05;
+      if (particleTrail > 0) {
+        this.renderWithTrails(gl, matrix);
+      } else {
+        this.renderNormal(gl, matrix);
+      }
+    };
+
+    // Normal rendering without trails
+    Particles.prototype.renderNormal = function renderNormal (gl, matrix) {
+      var this$1$1 = this;
+
+      this.visibleParticleTiles().forEach(function (tile) {
+        var found = this$1$1.findAssociatedDataTiles(tile);
+        if (!found) { return; } // Add this null check
+
+        this$1$1.draw(gl, matrix, this$1$1._particleTiles[tile], tile.viewMatrix(2), found);
+      });
     };
 
     Particles.prototype.createFadeShader = function createFadeShader (gl) {

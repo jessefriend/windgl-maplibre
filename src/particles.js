@@ -55,7 +55,7 @@ class Particles extends Layer {
           type: "number",
           minimum: 0,
           maximum: 1,
-          default: 0.005,
+          default: 0.05,
           transition: true,
           expression: {
             interpolated: true,
@@ -71,7 +71,7 @@ class Particles extends Layer {
 
     this.dropRate = 0.003; // how often the particles move to a random place
     this.dropRateBump = 0.01; // drop rate increase relative to individual particle speed
-    this._numParticles = 65536;
+    this._numParticles = 15000;
     // This layer manages 2 kinds of tiles: data tiles (the same as other layers) and particle state tiles
     this._particleTiles = {};
 
@@ -340,38 +340,25 @@ class Particles extends Layer {
     tile.particleStateTexture1 = temp;
   }
 
-  // Add a main render method that decides between normal and trail rendering
-  render(gl, matrix) {
-    if (!this.windData) return;
-
-    const particleTrail = this.particleTrail || 0.05;
-    if (particleTrail > 0) {
-      this.renderWithTrails(gl, matrix);
-    } else {
-      this.renderNormal(gl, matrix);
-    }
-  }
-
-  // Normal rendering without trails
-  renderNormal(gl, matrix) {
-    this.visibleParticleTiles().forEach((tile) => {
-      const found = this.findAssociatedDataTiles(tile);
-      if (!found) return; // Add this null check
-
-      this.draw(gl, matrix, this._particleTiles[tile], tile.viewMatrix(2), found);
-    });
-  }
-
   setupTrailRendering(gl) {
     const canvas = gl.canvas;
-    this.trailCanvas = Math.min(canvas.width, canvas.height, 1024);
+    // Increase resolution at higher zoom levels
+    const zoomFactor = Math.pow(2, Math.max(0, this.map.getZoom() - 10));
+    this.trailCanvas = Math.min(canvas.width, canvas.height, 1024 * Math.min(zoomFactor, 4));
     
-    // Create empty texture data instead of null
+    // Create empty texture data
     const emptyData = new Uint8Array(this.trailCanvas * this.trailCanvas * 4);
-    // Fill with transparent black
     emptyData.fill(0);
     
-    // Create trail accumulation textures with proper data
+    // Clean up existing textures/framebuffers if they exist
+    if (this.trailTexture) {
+      gl.deleteTexture(this.trailTexture);
+      gl.deleteTexture(this.tempTrailTexture);
+      gl.deleteFramebuffer(this.trailFramebuffer);
+      gl.deleteFramebuffer(this.tempTrailFramebuffer);
+    }
+    
+    // Create trail accumulation textures with higher resolution
     this.trailTexture = util.createTexture(gl, gl.LINEAR, emptyData, this.trailCanvas, this.trailCanvas);
     this.tempTrailTexture = util.createTexture(gl, gl.LINEAR, emptyData, this.trailCanvas, this.trailCanvas);
     
@@ -391,6 +378,35 @@ class Particles extends Layer {
     this.createFadeShader(gl);
     
     this.trailEnabled = true;
+    this.lastZoom = this.map.getZoom();
+  }
+
+  // Add zoom change detection in render method
+  render(gl, matrix) {
+    if (!this.windData) return;
+
+    // Recreate trail textures if zoom changed significantly
+    const currentZoom = this.map.getZoom();
+    if (Math.abs(currentZoom - (this.lastZoom || 0)) > 1) {
+      this.setupTrailRendering(gl);
+    }
+
+    const particleTrail = this.particleTrail || 0.05;
+    if (particleTrail > 0) {
+      this.renderWithTrails(gl, matrix);
+    } else {
+      this.renderNormal(gl, matrix);
+    }
+  }
+
+  // Normal rendering without trails
+  renderNormal(gl, matrix) {
+    this.visibleParticleTiles().forEach((tile) => {
+      const found = this.findAssociatedDataTiles(tile);
+      if (!found) return; // Add this null check
+
+      this.draw(gl, matrix, this._particleTiles[tile], tile.viewMatrix(2), found);
+    });
   }
 
   createFadeShader(gl) {
