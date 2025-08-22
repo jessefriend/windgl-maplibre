@@ -343,8 +343,9 @@ class Particles extends Layer {
   // Add a main render method that decides between normal and trail rendering
   render(gl, matrix) {
     if (!this.windData) return;
-    
-    if (this.particleTrail > 0) {
+
+    const particleTrail = this.particleTrail || 0.05;
+    if (particleTrail > 0) {
       this.renderWithTrails(gl, matrix);
     } else {
       this.renderNormal(gl, matrix);
@@ -438,7 +439,7 @@ class Particles extends Layer {
     
     gl.uniform1i(this.fadeProgram.u_texture, 0);
     // Fade rate based on particle trail setting (higher = longer trails)
-    const fadeRate = 0.95 + (this.particleTrail * 0.04); // 0.95 to 0.99
+    const fadeRate = 0.75 + (this.particleTrail * 0.04); // 0.95 to 0.99
     gl.uniform1f(this.fadeProgram.u_fade, fadeRate);
     
     gl.disable(gl.BLEND);
