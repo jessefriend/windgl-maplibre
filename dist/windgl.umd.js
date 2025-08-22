@@ -6274,7 +6274,7 @@
             type: "number",
             minimum: 0,
             maximum: 1,
-            default: 0,
+            default: 0.005,
             transition: true,
             expression: {
               interpolated: true,
