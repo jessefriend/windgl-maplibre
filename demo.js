@@ -134,7 +134,8 @@ function initializeConfig(container, cfg) {
   var map = new maplibregl.Map({ container: container, style: cfg.style });
   map.on("load", function () {
     var beforeId = firstSymbolLayerId(map);
-    var source = windGL.source("wind/2025011206/tile.json");
+    // var source = windGL.source("wind/2025011206/tile.json");
+    var source = windGL.source("../testing/output/wind/2025010720/tile.json");
     cfg.layers.forEach(function (entry) {
       var type = entry.type;
       var after = entry.after;

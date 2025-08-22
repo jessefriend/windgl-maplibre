@@ -6218,23 +6218,10 @@
 
   function sampleFill (options) { return new SampleFill(options); }
 
-  var particleUpdate = function (gl) { return createProgram(gl, "precision highp float;attribute vec2 a_pos;varying vec2 h;void main(){h=a_pos,gl_Position=vec4(1.-2.*a_pos,0,1);}const vec3 f=vec3(12.9898,78.233,4375.85453);", "precision highp float;vec2 g(vec2 b,mat4 c){vec4 a=c*vec4(b,1,1);return a.xy/a.w;}uniform sampler2D u_particles,u_wind_top_left,u_wind_top_center,u_wind_top_right,u_wind_middle_left,u_wind_middle_center,u_wind_middle_right,u_wind_bottom_left,u_wind_bottom_center,u_wind_bottom_right;uniform vec2 u_wind_res,u_wind_min,u_wind_max;uniform bool u_initialize;uniform mat4 u_data_matrix;uniform float u_rand_seed,u_speed_factor,u_drop_rate,u_drop_rate_bump;varying vec2 h;const vec3 f=vec3(12.9898,78.233,4375.85453);float i(const vec2 b){float a=dot(f.xy,b);return fract(sin(a)*(f.z+a));}vec2 e(const vec2 a){return a.x>1.&&a.y>1.?texture2D(u_wind_bottom_right,a-vec2(1,1)).rg:a.x>0.&&a.y>1.?texture2D(u_wind_bottom_center,a-vec2(0,1)).rg:a.y>1.?texture2D(u_wind_bottom_left,a-vec2(-1,1)).rg:a.x>1.&&a.y>0.?texture2D(u_wind_middle_right,a-vec2(1,0)).rg:a.x>0.&&a.y>0.?texture2D(u_wind_middle_center,a-vec2(0,0)).rg:a.y>0.?texture2D(u_wind_middle_left,a-vec2(-1,0)).rg:a.x>1.?texture2D(u_wind_top_right,a-vec2(1,-1)).rg:a.x>0.?texture2D(u_wind_top_center,a-vec2(0,-1)).rg:texture2D(u_wind_top_left,a-vec2(-1,-1)).rg;}vec2 p(const vec2 d){vec2 a=1./u_wind_res,b=floor(d*u_wind_res)*a,c=fract(d*u_wind_res),j=e(b),k=e(b+vec2(a.x,0)),l=e(b+vec2(0,a.y)),m=e(b+a);return mix(mix(j,k,c.x),mix(l,m,c.x),c.y);}vec2 o(vec2 a){vec2 d=g(a,u_data_matrix),b=mix(u_wind_min,u_wind_max,p(d));float j=length(b)/length(u_wind_max);vec2 k=vec2(b.x,-b.y)*1e-4*u_speed_factor;a=fract(1.+a+k);vec2 c=(a+h)*u_rand_seed;float l=u_drop_rate+j*u_drop_rate_bump+smoothstep(.24,.5,length(a-vec2(.5,.5))*.7),m=step(1.-l,i(c));vec2 q=vec2(.5*i(c+1.3)+.25,.5*i(c+2.1)+.25);return mix(a,q,m);}void main(){vec4 b=texture2D(u_particles,h);vec2 a=vec2(b.r/255.+b.b,b.g/255.+b.a);a=o(a);if(u_initialize)for(int c=0;c<100;c++)a=o(a);gl_FragColor=vec4(fract(a*255.),floor(a*255.)/255.);}"); };
+  var particleUpdate = function (gl) { return createProgram(gl, "precision highp float;attribute vec2 a_pos;varying vec2 l;void main(){l=a_pos,gl_Position=vec4(1.-2.*a_pos,0.,1.);}const vec3 i=vec3(12.9898,78.233,4375.85453);", "precision highp float;vec2 j(vec2 b,mat4 c){vec4 a=c*vec4(b,1,1);return a.xy/a.w;}uniform sampler2D u_particles,u_wind_top_left,u_wind_top_center,u_wind_top_right,u_wind_middle_left,u_wind_middle_center,u_wind_middle_right,u_wind_bottom_left,u_wind_bottom_center,u_wind_bottom_right;uniform vec2 u_wind_res,u_wind_min,u_wind_max;uniform bool u_initialize;uniform mat4 u_data_matrix;uniform float u_rand_seed,u_speed_factor,u_drop_rate,u_drop_rate_bump;varying vec2 l;const vec3 i=vec3(12.9898,78.233,4375.85453);float m(const vec2 b){float a=dot(i.xy,b);return fract(sin(a)*(i.z+a));}vec2 h(const vec2 a){return a.x>1.&&a.y>1.?texture2D(u_wind_bottom_right,a-vec2(1.,1.)).rg:a.x>0.&&a.y>1.?texture2D(u_wind_bottom_center,a-vec2(0.,1.)).rg:a.y>1.?texture2D(u_wind_bottom_left,a-vec2(-1.,1.)).rg:a.x>1.&&a.y>0.?texture2D(u_wind_middle_right,a-vec2(1.,0.)).rg:a.x>0.&&a.y>0.?texture2D(u_wind_middle_center,a-vec2(0.,0.)).rg:a.y>0.?texture2D(u_wind_middle_left,a-vec2(-1.,0.)).rg:a.x>1.?texture2D(u_wind_top_right,a-vec2(1.,-1.)).rg:a.x>0.?texture2D(u_wind_top_center,a-vec2(0.,-1.)).rg:texture2D(u_wind_top_left,a-vec2(-1.,-1.)).rg;}vec2 r(const vec2 d){vec2 a=1./u_wind_res,b=floor(d*u_wind_res)*a,c=fract(d*u_wind_res),e=h(b),f=h(b+vec2(a.x,0)),g=h(b+vec2(0,a.y)),k=h(b+a);return mix(mix(e,f,c.x),mix(g,k,c.x),c.y);}vec2 p(vec2 a){vec2 d=j(a,u_data_matrix),b=mix(u_wind_min,u_wind_max,r(d));float e=length(b)/length(u_wind_max);vec2 f=vec2(b.x,-b.y)*1e-4*u_speed_factor;a=fract(1.+a+f);vec2 c=(a+l)*u_rand_seed;float g=u_drop_rate+e*u_drop_rate_bump+smoothstep(.24,.5,length(a-vec2(.5,.5))*.7),k=step(1.-g,m(c));vec2 n=vec2(.5*m(c+1.3)+.25,.5*m(c+2.1)+.25);return mix(a,n,k);}void main(){vec4 b=texture2D(u_particles,l);vec2 a=vec2(b.r/255.+b.b,b.g/255.+b.a);a=p(a);if(u_initialize)for(int c=0;c<100;c++)a=p(a);gl_FragColor=vec4(fract(a*255.),floor(a*255.)/255.);}"); };
 
-  var particleDraw = function (gl) { return createProgram(gl, "precision highp float;vec2 r(vec2 b){float a=-180.*b.y+90.;a=(180.-57.29578*log(tan(.785398+a*3.141593/360.)))/360.;return vec2(b.x,a);}vec2 g(vec2 b,mat4 c){vec4 a=c*vec4(b,1,1);return a.xy/a.w;}uniform sampler2D u_particles;uniform mat4 u_matrix,u_offset;uniform float u_particles_res,u_particle_size;const vec3 f=vec3(12.9898,78.233,4375.85453);attribute float a_index;varying vec2 n;void main(){vec4 a=texture2D(u_particles,vec2(fract(a_index/u_particles_res),floor(a_index/u_particles_res)/u_particles_res));vec2 b=vec2(a.r/255.+a.b,a.g/255.+a.a),c=g(b,u_offset),d=r(c);n=b,gl_PointSize=u_particle_size,gl_Position=u_matrix*vec4(d,0,1);}", "precision highp float;vec2 g(vec2 b,mat4 c){vec4 a=c*vec4(b,1,1);return a.xy/a.w;}uniform sampler2D u_wind_top_left,u_wind_top_center,u_wind_top_right,u_wind_middle_left,u_wind_middle_center,u_wind_middle_right,u_wind_bottom_left,u_wind_bottom_center,u_wind_bottom_right,u_color_ramp;uniform vec2 u_wind_min,u_wind_max;uniform mat4 u_data_matrix;uniform float u_trail_alpha;const vec3 f=vec3(12.9898,78.233,4375.85453);vec2 e(const vec2 a){return a.x>1.&&a.y>1.?texture2D(u_wind_bottom_right,a-vec2(1,1)).rg:a.x>0.&&a.y>1.?texture2D(u_wind_bottom_center,a-vec2(0,1)).rg:a.y>1.?texture2D(u_wind_bottom_left,a-vec2(-1,1)).rg:a.x>1.&&a.y>0.?texture2D(u_wind_middle_right,a-vec2(1,0)).rg:a.x>0.&&a.y>0.?texture2D(u_wind_middle_center,a-vec2(0,0)).rg:a.y>0.?texture2D(u_wind_middle_left,a-vec2(-1,0)).rg:a.x>1.?texture2D(u_wind_top_right,a-vec2(1,-1)).rg:a.x>0.?texture2D(u_wind_top_center,a-vec2(0,-1)).rg:texture2D(u_wind_top_left,a-vec2(-1,-1)).rg;}varying vec2 n;void main(){vec2 c=mix(u_wind_min,u_wind_max,e(g(n,u_data_matrix)));float a=length(c)/length(u_wind_max);vec2 d=vec2(fract(16.*a),floor(16.*a)/16.);vec4 b=texture2D(u_color_ramp,d);gl_FragColor=vec4(b.rgb,b.a*u_trail_alpha);}"); };
+  var particleDraw = function (gl) { return createProgram(gl, "precision highp float;vec2 s(vec2 b){float a=-180.*b.y+90.;a=(180.-57.29578*log(tan(.785398+a*3.141593/360.)))/360.;return vec2(b.x,a);}vec2 j(vec2 b,mat4 c){vec4 a=c*vec4(b,1,1);return a.xy/a.w;}uniform sampler2D u_particles,u_particles_prev;uniform mat4 u_matrix,u_offset;uniform float u_particles_res,u_particle_size,u_interp_t;const vec3 i=vec3(12.9898,78.233,4375.85453);attribute float a_index;varying vec2 o;vec2 q(vec4 a){return vec2(a.r/255.+a.b,a.g/255.+a.a);}void main(){float a=u_particles_res;vec2 b=vec2(fract(a_index/a),floor(a_index/a)/a);vec4 d=texture2D(u_particles,b),e=texture2D(u_particles_prev,b);vec2 f=q(d),g=q(e),c=mix(g,f,clamp(u_interp_t,0.,1.));o=c;vec2 k=j(c,u_offset),n=s(k);gl_PointSize=u_particle_size,gl_Position=u_matrix*vec4(n,0.,1.);}", "precision highp float;vec2 j(vec2 b,mat4 c){vec4 a=c*vec4(b,1,1);return a.xy/a.w;}uniform sampler2D u_wind_top_left,u_wind_top_center,u_wind_top_right,u_wind_middle_left,u_wind_middle_center,u_wind_middle_right,u_wind_bottom_left,u_wind_bottom_center,u_wind_bottom_right,u_color_ramp;uniform vec2 u_wind_min,u_wind_max;uniform mat4 u_data_matrix;uniform float u_trail_alpha;const vec3 i=vec3(12.9898,78.233,4375.85453);vec2 h(const vec2 a){return a.x>1.&&a.y>1.?texture2D(u_wind_bottom_right,a-vec2(1.,1.)).rg:a.x>0.&&a.y>1.?texture2D(u_wind_bottom_center,a-vec2(0.,1.)).rg:a.y>1.?texture2D(u_wind_bottom_left,a-vec2(-1.,1.)).rg:a.x>1.&&a.y>0.?texture2D(u_wind_middle_right,a-vec2(1.,0.)).rg:a.x>0.&&a.y>0.?texture2D(u_wind_middle_center,a-vec2(0.,0.)).rg:a.y>0.?texture2D(u_wind_middle_left,a-vec2(-1.,0.)).rg:a.x>1.?texture2D(u_wind_top_right,a-vec2(1.,-1.)).rg:a.x>0.?texture2D(u_wind_top_center,a-vec2(0.,-1.)).rg:texture2D(u_wind_top_left,a-vec2(-1.,-1.)).rg;}varying vec2 o;void main(){vec2 d=mix(u_wind_min,u_wind_max,h(j(o,u_data_matrix)));float a=length(d)/length(u_wind_max);vec2 e=vec2(fract(16.*a),floor(16.*a)/16.);vec4 b=texture2D(u_color_ramp,e);vec2 c=gl_PointCoord*2.-1.;float f=dot(c,c),g=smoothstep(1.,.8,f);gl_FragColor=vec4(b.rgb,b.a*u_trail_alpha*g);}"); };
 
-  /**
-   * This layer simulates a particles system where the particles move according
-   * to the forces of the wind. This is achieved in a two step rendering process:
-   *
-   * 1. First the particle positions are updated. These are stored in a texure
-   *    where the BR channels encode x and AG encode the y position. The `update`
-   *    function invokes a shader that updates the positions and renders them back
-   *    into a texure. This whole simulation happens in global WSG84 coordinates.
-   *
-   * 2. In the `draw` phase, actual points are drawn on screen. Their positions
-   *    are read from the texture and are projected into pseudo-mercator coordinates
-   *    and their final position is computed based on the map viewport.
-   */
   var Particles = /*@__PURE__*/(function (Layer) {
     function Particles(options) {
       Layer.call(
@@ -6242,10 +6229,7 @@
           "particle-color": {
             type: "color",
             default: "white",
-            expression: {
-              interpolated: true,
-              parameters: ["zoom", "feature"]
-            },
+            expression: { interpolated: true, parameters: ["zoom", "feature"] },
             "property-type": "data-driven"
           },
           "particle-speed": {
@@ -6253,10 +6237,7 @@
             minimum: 0,
             default: 0.75,
             transition: true,
-            expression: {
-              interpolated: true,
-              parameters: ["zoom"]
-            },
+            expression: { interpolated: true, parameters: ["zoom"] },
             "property-type": "data-constant"
           },
           "particle-size": {
@@ -6264,10 +6245,7 @@
             minimum: 0.1,
             default: 2.0,
             transition: true,
-            expression: {
-              interpolated: true,
-              parameters: ["zoom"]
-            },
+            expression: { interpolated: true, parameters: ["zoom"] },
             "property-type": "data-constant"
           },
           "particle-trail": {
@@ -6276,10 +6254,7 @@
             maximum: 1,
             default: 0.05,
             transition: true,
-            expression: {
-              interpolated: true,
-              parameters: ["zoom"]
-            },
+            expression: { interpolated: true, parameters: ["zoom"] },
             "property-type": "data-constant"
           }
         },
@@ -6288,15 +6263,15 @@
       this.pixelToGridRatio = 20;
       this.tileSize = 1024;
 
-      this.dropRate = 0.003; // how often the particles move to a random place
-      this.dropRateBump = 0.01; // drop rate increase relative to individual particle speed
-      this._numParticles = 15000;
-      // This layer manages 2 kinds of tiles: data tiles (the same as other layers) and particle state tiles
+      this.dropRate = 0.003;
+      this.dropRateBump = 0.01;
+      this._numParticles = 5000;
+
       this._particleTiles = {};
 
-      // Trail effect properties
+      // Trail effect
       this.trailEnabled = false;
-      this.trailFadeRate = 0.98; // Higher = longer trails (0.9-0.99)
+      this.trailFadeRate = 0.98;
     }
 
     if ( Layer ) Particles.__proto__ = Layer;
@@ -6306,7 +6281,7 @@
     Particles.prototype.visibleParticleTiles = function visibleParticleTiles () {
       return this.computeVisibleTiles(2, this.tileSize, {
         minzoom: 0,
-        maxzoom: this.windData.maxzoom + 3 // how much overzoom to allow?
+        maxzoom: this.windData.maxzoom + 3
       });
     };
 
@@ -6315,7 +6290,6 @@
     };
 
     Particles.prototype.initializeParticleTile = function initializeParticleTile () {
-      // textures to hold the particle state for the current and the next frame
       var particleStateTexture0 = createTexture(
         this.gl,
         this.gl.NEAREST,
@@ -6354,14 +6328,12 @@
     };
 
     Particles.prototype.initializeParticles = function initializeParticles (gl, count) {
-      var particleRes = (this.particleStateResolution = Math.ceil(
-        Math.sqrt(count)
-      ));
+      var particleRes = (this.particleStateResolution = Math.ceil(Math.sqrt(count)));
       this._numParticles = particleRes * particleRes;
 
       this._randomParticleState = new Uint8Array(this._numParticles * 4);
       for (var i = 0; i < this._randomParticleState.length; i++) {
-        this._randomParticleState[i] = Math.floor(Math.random() * 256); // randomize the initial particle positions
+        this._randomParticleState[i] = Math.floor(Math.random() * 256);
       }
 
       var particleIndices = new Float32Array(this._numParticles);
@@ -6384,13 +6356,7 @@
 
       this.initializeParticles(gl, this._numParticles);
 
-      this.nullTexture = createTexture(
-        gl,
-        gl.NEAREST,
-        new Uint8Array([0, 0, 0, 0]),
-        1,
-        1
-      );
+      this.nullTexture = createTexture(gl, gl.NEAREST, new Uint8Array([0, 0, 0, 0]), 1, 1);
 
       this.nullTile = {
         getTexture: function () { return this$1$1.nullTexture; }
@@ -6398,9 +6364,12 @@
 
       // Setup trail rendering components
       this.setupTrailRendering(gl);
+
+      this._onResize = function () { return this$1$1.setupTrailRendering(gl); };
+      map.on("resize", this._onResize);
     };
 
-    // This is a callback from mapbox for rendering into a texture
+    // mapbox prerender callback
     Particles.prototype.prerender = function prerender (gl) {
       var this$1$1 = this;
 
@@ -6420,9 +6389,6 @@
       }
     };
 
-    /**
-     * This method computes the ideal data tiles to support our particle tiles
-     */
     Particles.prototype.computeLoadableTiles = function computeLoadableTiles () {
       var this$1$1 = this;
 
@@ -6521,12 +6487,7 @@
 
     Particles.prototype.update = function update (gl, tile, data) {
       bindFramebuffer(gl, this.framebuffer, tile.particleStateTexture1);
-      gl.viewport(
-        0,
-        0,
-        this.particleStateResolution,
-        this.particleStateResolution
-      );
+      gl.viewport(0, 0, this.particleStateResolution, this.particleStateResolution);
 
       var program = this.updateProgram;
       gl.useProgram(program.program);
@@ -6569,7 +6530,7 @@
 
       gl.drawArrays(gl.TRIANGLES, 0, 6);
 
-      // swap the particle state textures so the new one becomes the current one
+      // ping-pong swap
       var temp = tile.particleStateTexture0;
       tile.particleStateTexture0 = tile.particleStateTexture1;
       tile.particleStateTexture1 = temp;
@@ -6577,155 +6538,171 @@
 
     Particles.prototype.setupTrailRendering = function setupTrailRendering (gl) {
       var canvas = gl.canvas;
-      // Increase resolution at higher zoom levels
-      var zoomFactor = Math.pow(2, Math.max(0, this.map.getZoom() - 10));
-      this.trailCanvas = Math.min(canvas.width, canvas.height, 1024 * Math.min(zoomFactor, 4));
-      
-      // Create empty texture data
-      var emptyData = new Uint8Array(this.trailCanvas * this.trailCanvas * 4);
-      emptyData.fill(0);
-      
-      // Clean up existing textures/framebuffers if they exist
+      var width = Math.max(1, Math.floor(canvas.width));
+      var height = Math.max(1, Math.floor(canvas.height));
+
+      // Clean up old
       if (this.trailTexture) {
         gl.deleteTexture(this.trailTexture);
         gl.deleteTexture(this.tempTrailTexture);
         gl.deleteFramebuffer(this.trailFramebuffer);
         gl.deleteFramebuffer(this.tempTrailFramebuffer);
       }
-      
-      // Create trail accumulation textures with higher resolution
-      this.trailTexture = createTexture(gl, gl.LINEAR, emptyData, this.trailCanvas, this.trailCanvas);
-      this.tempTrailTexture = createTexture(gl, gl.LINEAR, emptyData, this.trailCanvas, this.trailCanvas);
-      
-      // Create framebuffers
+
+      // Allocate 1:1 with the framebuffer size (device pixels)
+      var empty = new Uint8Array(width * height * 4);
+      var makeTex = function () {
+        var tex = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, tex);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, empty);
+        return tex;
+      };
+
+      this.trailTexture = makeTex();
+      this.tempTrailTexture = makeTex();
+
       this.trailFramebuffer = gl.createFramebuffer();
       this.tempTrailFramebuffer = gl.createFramebuffer();
-      
+
       gl.bindFramebuffer(gl.FRAMEBUFFER, this.trailFramebuffer);
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.trailTexture, 0);
-      
+
       gl.bindFramebuffer(gl.FRAMEBUFFER, this.tempTrailFramebuffer);
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.tempTrailTexture, 0);
-      
+
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-      
-      // Create fade shader for trail decay
-      this.createFadeShader(gl);
-      
+
+      if (!this.fadeProgram) { this.createFadeShader(gl); }
+
       this.trailEnabled = true;
       this.lastZoom = this.map.getZoom();
+      this._trailWidth = width;
+      this._trailHeight = height;
+      this._trailReadyFrames = 0; // warm-up
     };
 
-    // Add zoom change detection in render method
     Particles.prototype.render = function render (gl, matrix) {
       if (!this.windData) { return; }
 
       // Recreate trail textures if zoom changed significantly
       var currentZoom = this.map.getZoom();
-      if (Math.abs(currentZoom - (this.lastZoom || 0)) > 1) {
+      if (Math.abs(currentZoom - (this.lastZoom || 0)) > 0.5) {
         this.setupTrailRendering(gl);
       }
 
-      var particleTrail = this.particleTrail || 0.05;
-      if (particleTrail > 0) {
+      if (this.trailEnabled) {
         this.renderWithTrails(gl, matrix);
+        if (this._trailReadyFrames < 2) { this._trailReadyFrames++; }
       } else {
         this.renderNormal(gl, matrix);
       }
     };
 
-    // Normal rendering without trails
     Particles.prototype.renderNormal = function renderNormal (gl, matrix) {
       var this$1$1 = this;
 
-      this.visibleParticleTiles().forEach(function (tile) {
+      var tiles = this.visibleParticleTiles();
+      tiles.forEach(function (tile) {
         var found = this$1$1.findAssociatedDataTiles(tile);
-        if (!found) { return; } // Add this null check
-
-        this$1$1.draw(gl, matrix, this$1$1._particleTiles[tile], tile.viewMatrix(2), found);
+        if (!found) { return; }
+        // No trails: single stamp at t=1, alpha=1
+        this$1$1.draw(gl, matrix, this$1$1._particleTiles[tile], tile.viewMatrix(2), found, 1.0, 1.0);
       });
     };
 
     Particles.prototype.createFadeShader = function createFadeShader (gl) {
       var vertexSource = "\n      attribute vec2 a_position;\n      varying vec2 v_texCoord;\n      void main() {\n        v_texCoord = a_position * 0.5 + 0.5;\n        gl_Position = vec4(a_position, 0.0, 1.0);\n      }\n    ";
-      
+
       var fragmentSource = "\n      precision mediump float;\n      uniform sampler2D u_texture;\n      uniform float u_fade;\n      varying vec2 v_texCoord;\n      void main() {\n        vec4 color = texture2D(u_texture, v_texCoord);\n        gl_FragColor = vec4(color.rgb, color.a * u_fade);\n      }\n    ";
-      
+
       this.fadeProgram = createProgram(gl, vertexSource, fragmentSource);
-      this.fadeQuadBuffer = createBuffer(gl, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]));
+      this.fadeQuadBuffer = createBuffer(
+        gl,
+        new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1])
+      );
     };
 
-    // Trail rendering with accumulation
+    // Trail rendering with accumulation + multi-stamp interpolation
     Particles.prototype.renderWithTrails = function renderWithTrails (gl, matrix) {
       var this$1$1 = this;
       var assign, assign$1;
 
-      if (!this.fadeProgram || !this.trailTexture) {
-        // Fallback to normal rendering if trails aren't set up
-        this.renderNormal(gl, matrix);
-        return;
-      }
+      if (!this.fadeProgram || !this.trailTexture) { return this.renderNormal(gl, matrix); }
 
-      var viewport = gl.getParameter(gl.VIEWPORT);
-      
-      // 1. Fade existing trail texture
+      // ----- 1) Fade existing trail into temp FBO -----
       gl.bindFramebuffer(gl.FRAMEBUFFER, this.tempTrailFramebuffer);
-      gl.viewport(0, 0, this.trailCanvas, this.trailCanvas);
+      gl.viewport(0, 0, this._trailWidth, this._trailHeight);
       gl.clear(gl.COLOR_BUFFER_BIT);
-      
+
       gl.useProgram(this.fadeProgram.program);
       bindTexture(gl, this.trailTexture, 0);
       bindAttribute(gl, this.fadeQuadBuffer, this.fadeProgram.a_position, 2);
-      
-      gl.uniform1i(this.fadeProgram.u_texture, 0);
-      // Fade rate based on particle trail setting (higher = longer trails)
-      var fadeRate = 0.75 + (this.particleTrail * 0.04); // 0.95 to 0.99
+
+      // Shorter trails as requested
+      var fadeRate = Math.min(0.98, 0.9 + (this.particleTrail || 0.05) * 0.06);
       gl.uniform1f(this.fadeProgram.u_fade, fadeRate);
-      
+      gl.uniform1i(this.fadeProgram.u_texture, 0);
+
       gl.disable(gl.BLEND);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
-      
-      // 2. Render new particles to the faded trail buffer
+
+      // ----- 2) Render new particles (multi-stamp) into the same temp FBO -----
       gl.enable(gl.BLEND);
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-      
-      this.visibleParticleTiles().forEach(function (tile) {
-        var found = this$1$1.findAssociatedDataTiles(tile);
-        if (!found) { return; }
-        this$1$1.draw(gl, matrix, this$1$1._particleTiles[tile], tile.viewMatrix(2), found);
-      });
-      
-      // Swap textures for next frame
+
+      var tiles = this.visibleParticleTiles();
+      var SUBSTEPS = 3;
+      var baseAlpha = 1.0 / SUBSTEPS;
+
+      var loop = function ( s ) {
+        var t = (s + 1) / SUBSTEPS; // (0,1]
+        tiles.forEach(function (tile) {
+          var found = this$1$1.findAssociatedDataTiles(tile);
+          if (!found) { return; }
+          this$1$1.draw(gl, matrix, this$1$1._particleTiles[tile], tile.viewMatrix(2), found, t, baseAlpha);
+        });
+      };
+
+      for (var s = 0; s < SUBSTEPS; s++) loop( s );
+
+      // ----- 3) Swap ping-pong trail textures -----
       (assign = [this.tempTrailTexture, this.trailTexture], this.trailTexture = assign[0], this.tempTrailTexture = assign[1]);
       (assign$1 = [this.tempTrailFramebuffer, this.trailFramebuffer], this.trailFramebuffer = assign$1[0], this.tempTrailFramebuffer = assign$1[1]);
-      
-      // 3. Render accumulated trail texture to main screen
+
+      // ----- 4) Composite to default framebuffer at native resolution -----
+      var vp = gl.getParameter(gl.VIEWPORT);
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-      gl.viewport(viewport[0], viewport[1], viewport[2], viewport[3]);
-      
+      gl.viewport(vp[0], vp[1], vp[2], vp[3]);
+
       gl.useProgram(this.fadeProgram.program);
       bindTexture(gl, this.trailTexture, 0);
       bindAttribute(gl, this.fadeQuadBuffer, this.fadeProgram.a_position, 2);
-      
       gl.uniform1i(this.fadeProgram.u_texture, 0);
       gl.uniform1f(this.fadeProgram.u_fade, 1.0);
-      
+
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
-      
       gl.disable(gl.BLEND);
     };
 
-    // Update the draw method to handle wind data properly
-    Particles.prototype.draw = function draw (gl, matrix, tile, offset, data) {
+    // Draw a single pass; now accepts substep 't' and 'alpha' so uniforms are set on the correct program
+    Particles.prototype.draw = function draw (gl, matrix, tile, offset, data, interpT, trailAlpha) {
+      if ( interpT === void 0 ) interpT = 1.0;
+      if ( trailAlpha === void 0 ) trailAlpha = 1.0;
+
       var program = this.drawProgram;
       gl.useProgram(program.program);
 
-      // Bind particle state texture
+      // Particle state (current & previous)
       bindTexture(gl, tile.particleStateTexture0, 0);
+      bindTexture(gl, tile.particleStateTexture1, 11);
       bindTexture(gl, this.colorRampTexture, 1);
 
-      // Bind wind data textures
+      // Wind textures
       bindTexture(gl, data.tileTopLeft.getTexture(gl), 2);
       bindTexture(gl, data.tileTopCenter.getTexture(gl), 3);
       bindTexture(gl, data.tileTopRight.getTexture(gl), 4);
@@ -6738,8 +6715,9 @@
 
       bindAttribute(gl, this.particleIndexBuffer, program.a_index, 1);
 
-      // Set texture uniforms
+      // Sampler bindings
       gl.uniform1i(program.u_particles, 0);
+      gl.uniform1i(program.u_particles_prev, 11);
       gl.uniform1i(program.u_color_ramp, 1);
       gl.uniform1i(program.u_wind_top_left, 2);
       gl.uniform1i(program.u_wind_top_center, 3);
@@ -6751,19 +6729,19 @@
       gl.uniform1i(program.u_wind_bottom_center, 9);
       gl.uniform1i(program.u_wind_bottom_right, 10);
 
-      // Set other uniforms
+      // Other uniforms
       gl.uniform1f(program.u_particles_res, this.particleStateResolution);
       gl.uniformMatrix4fv(program.u_matrix, false, matrix);
       gl.uniformMatrix4fv(program.u_offset, false, offset);
       gl.uniform1f(program.u_particle_size, this.particleSize);
 
-      // Set wind data uniforms
       gl.uniform2f(program.u_wind_min, this.windData.uMin, this.windData.vMin);
       gl.uniform2f(program.u_wind_max, this.windData.uMax, this.windData.vMax);
       gl.uniformMatrix4fv(program.u_data_matrix, false, data.matrix);
 
-      // For trails, use full opacity - the fading happens in the framebuffer
-      gl.uniform1f(program.u_trail_alpha, 1.0);
+      // Substep interpolation + per-substep alpha (set on the correct program)
+      if (program.u_interp_t) { gl.uniform1f(program.u_interp_t, interpT); }
+      if (program.u_trail_alpha) { gl.uniform1f(program.u_trail_alpha, trailAlpha); }
 
       gl.drawArrays(gl.POINTS, 0, this._numParticles);
     };
