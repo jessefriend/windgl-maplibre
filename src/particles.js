@@ -50,6 +50,18 @@ class Particles extends Layer {
             parameters: ["zoom"]
           },
           "property-type": "data-constant"
+        },
+        "particle-trail": {
+          type: "number",
+          minimum: 0,
+          maximum: 1,
+          default: 0,
+          transition: true,
+          expression: {
+            interpolated: true,
+            parameters: ["zoom"]
+          },
+          "property-type": "data-constant"
         }
       },
       options
@@ -62,6 +74,10 @@ class Particles extends Layer {
     this._numParticles = 65536;
     // This layer manages 2 kinds of tiles: data tiles (the same as other layers) and particle state tiles
     this._particleTiles = {};
+
+    // Trail effect properties
+    this.trailEnabled = false;
+    this.trailFadeRate = 0.98; // Higher = longer trails (0.9-0.99)
   }
 
   visibleParticleTiles() {
@@ -152,6 +168,9 @@ class Particles extends Layer {
     this.nullTile = {
       getTexture: () => this.nullTexture
     };
+
+    // Setup trail rendering components
+    this.setupTrailRendering(gl);
   }
 
   // This is a callback from mapbox for rendering into a texture
@@ -321,68 +340,189 @@ class Particles extends Layer {
     tile.particleStateTexture1 = temp;
   }
 
+  // Add a main render method that decides between normal and trail rendering
   render(gl, matrix) {
-    if (this.windData) {
-      this.visibleParticleTiles().forEach(tile => {
-        const found = this.findAssociatedDataTiles(tile);
-        if (!found) return;
-
-        this.draw(
-          gl,
-          matrix,
-          this._particleTiles[tile],
-          tile.viewMatrix(2),
-          found
-        );
-      });
+    if (!this.windData) return;
+    
+    if (this.particleTrail > 0) {
+      this.renderWithTrails(gl, matrix);
+    } else {
+      this.renderNormal(gl, matrix);
     }
   }
 
+  // Normal rendering without trails
+  renderNormal(gl, matrix) {
+    this.visibleParticleTiles().forEach((tile) => {
+      const found = this.findAssociatedDataTiles(tile);
+      if (!found) return; // Add this null check
+
+      this.draw(gl, matrix, this._particleTiles[tile], tile.viewMatrix(2), found);
+    });
+  }
+
+  setupTrailRendering(gl) {
+    const canvas = gl.canvas;
+    this.trailCanvas = Math.min(canvas.width, canvas.height, 1024);
+    
+    // Create empty texture data instead of null
+    const emptyData = new Uint8Array(this.trailCanvas * this.trailCanvas * 4);
+    // Fill with transparent black
+    emptyData.fill(0);
+    
+    // Create trail accumulation textures with proper data
+    this.trailTexture = util.createTexture(gl, gl.LINEAR, emptyData, this.trailCanvas, this.trailCanvas);
+    this.tempTrailTexture = util.createTexture(gl, gl.LINEAR, emptyData, this.trailCanvas, this.trailCanvas);
+    
+    // Create framebuffers
+    this.trailFramebuffer = gl.createFramebuffer();
+    this.tempTrailFramebuffer = gl.createFramebuffer();
+    
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.trailFramebuffer);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.trailTexture, 0);
+    
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.tempTrailFramebuffer);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.tempTrailTexture, 0);
+    
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    
+    // Create fade shader for trail decay
+    this.createFadeShader(gl);
+    
+    this.trailEnabled = true;
+  }
+
+  createFadeShader(gl) {
+    const vertexSource = `
+      attribute vec2 a_position;
+      varying vec2 v_texCoord;
+      void main() {
+        v_texCoord = a_position * 0.5 + 0.5;
+        gl_Position = vec4(a_position, 0.0, 1.0);
+      }
+    `;
+    
+    const fragmentSource = `
+      precision mediump float;
+      uniform sampler2D u_texture;
+      uniform float u_fade;
+      varying vec2 v_texCoord;
+      void main() {
+        vec4 color = texture2D(u_texture, v_texCoord);
+        gl_FragColor = vec4(color.rgb, color.a * u_fade);
+      }
+    `;
+    
+    this.fadeProgram = util.createProgram(gl, vertexSource, fragmentSource);
+    this.fadeQuadBuffer = util.createBuffer(gl, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]));
+  }
+
+  // Trail rendering with accumulation
+  renderWithTrails(gl, matrix) {
+    if (!this.fadeProgram || !this.trailTexture) {
+      // Fallback to normal rendering if trails aren't set up
+      this.renderNormal(gl, matrix);
+      return;
+    }
+
+    const viewport = gl.getParameter(gl.VIEWPORT);
+    
+    // 1. Fade existing trail texture
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.tempTrailFramebuffer);
+    gl.viewport(0, 0, this.trailCanvas, this.trailCanvas);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    
+    gl.useProgram(this.fadeProgram.program);
+    util.bindTexture(gl, this.trailTexture, 0);
+    util.bindAttribute(gl, this.fadeQuadBuffer, this.fadeProgram.a_position, 2);
+    
+    gl.uniform1i(this.fadeProgram.u_texture, 0);
+    // Fade rate based on particle trail setting (higher = longer trails)
+    const fadeRate = 0.95 + (this.particleTrail * 0.04); // 0.95 to 0.99
+    gl.uniform1f(this.fadeProgram.u_fade, fadeRate);
+    
+    gl.disable(gl.BLEND);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    
+    // 2. Render new particles to the faded trail buffer
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    
+    this.visibleParticleTiles().forEach((tile) => {
+      const found = this.findAssociatedDataTiles(tile);
+      if (!found) return;
+      this.draw(gl, matrix, this._particleTiles[tile], tile.viewMatrix(2), found);
+    });
+    
+    // Swap textures for next frame
+    [this.trailTexture, this.tempTrailTexture] = [this.tempTrailTexture, this.trailTexture];
+    [this.trailFramebuffer, this.tempTrailFramebuffer] = [this.tempTrailFramebuffer, this.trailFramebuffer];
+    
+    // 3. Render accumulated trail texture to main screen
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+    
+    gl.useProgram(this.fadeProgram.program);
+    util.bindTexture(gl, this.trailTexture, 0);
+    util.bindAttribute(gl, this.fadeQuadBuffer, this.fadeProgram.a_position, 2);
+    
+    gl.uniform1i(this.fadeProgram.u_texture, 0);
+    gl.uniform1f(this.fadeProgram.u_fade, 1.0);
+    
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    
+    gl.disable(gl.BLEND);
+  }
+
+  // Update the draw method to handle wind data properly
   draw(gl, matrix, tile, offset, data) {
     const program = this.drawProgram;
     gl.useProgram(program.program);
+
+    // Bind particle state texture
     util.bindTexture(gl, tile.particleStateTexture0, 0);
-    util.bindTexture(gl, data.tileTopLeft.getTexture(gl), 1);
-    util.bindTexture(gl, data.tileTopCenter.getTexture(gl), 2);
-    util.bindTexture(gl, data.tileTopRight.getTexture(gl), 3);
-    util.bindTexture(gl, data.tileMiddleLeft.getTexture(gl), 4);
-    util.bindTexture(gl, data.tileMiddleCenter.getTexture(gl), 5);
-    util.bindTexture(gl, data.tileMiddleRight.getTexture(gl), 6);
-    util.bindTexture(gl, data.tileBottomLeft.getTexture(gl), 7);
-    util.bindTexture(gl, data.tileBottomCenter.getTexture(gl), 8);
-    util.bindTexture(gl, data.tileBottomRight.getTexture(gl), 9);
-    util.bindTexture(gl, this.colorRampTexture, 10);
+    util.bindTexture(gl, this.colorRampTexture, 1);
+
+    // Bind wind data textures
+    util.bindTexture(gl, data.tileTopLeft.getTexture(gl), 2);
+    util.bindTexture(gl, data.tileTopCenter.getTexture(gl), 3);
+    util.bindTexture(gl, data.tileTopRight.getTexture(gl), 4);
+    util.bindTexture(gl, data.tileMiddleLeft.getTexture(gl), 5);
+    util.bindTexture(gl, data.tileMiddleCenter.getTexture(gl), 6);
+    util.bindTexture(gl, data.tileMiddleRight.getTexture(gl), 7);
+    util.bindTexture(gl, data.tileBottomLeft.getTexture(gl), 8);
+    util.bindTexture(gl, data.tileBottomCenter.getTexture(gl), 9);
+    util.bindTexture(gl, data.tileBottomRight.getTexture(gl), 10);
 
     util.bindAttribute(gl, this.particleIndexBuffer, program.a_index, 1);
 
+    // Set texture uniforms
     gl.uniform1i(program.u_particles, 0);
-    gl.uniform1i(program.u_wind_top_left, 1);
-    gl.uniform1i(program.u_wind_top_center, 2);
-    gl.uniform1i(program.u_wind_top_right, 3);
-    gl.uniform1i(program.u_wind_middle_left, 4);
-    gl.uniform1i(program.u_wind_middle_center, 5);
-    gl.uniform1i(program.u_wind_middle_right, 6);
-    gl.uniform1i(program.u_wind_bottom_left, 7);
-    gl.uniform1i(program.u_wind_bottom_center, 8);
-    gl.uniform1i(program.u_wind_bottom_right, 9);
-    gl.uniform1i(program.u_color_ramp, 10);
+    gl.uniform1i(program.u_color_ramp, 1);
+    gl.uniform1i(program.u_wind_top_left, 2);
+    gl.uniform1i(program.u_wind_top_center, 3);
+    gl.uniform1i(program.u_wind_top_right, 4);
+    gl.uniform1i(program.u_wind_middle_left, 5);
+    gl.uniform1i(program.u_wind_middle_center, 6);
+    gl.uniform1i(program.u_wind_middle_right, 7);
+    gl.uniform1i(program.u_wind_bottom_left, 8);
+    gl.uniform1i(program.u_wind_bottom_center, 9);
+    gl.uniform1i(program.u_wind_bottom_right, 10);
 
+    // Set other uniforms
     gl.uniform1f(program.u_particles_res, this.particleStateResolution);
-
+    gl.uniformMatrix4fv(program.u_matrix, false, matrix);
     gl.uniformMatrix4fv(program.u_offset, false, offset);
-    gl.uniformMatrix4fv(
-      program.u_offset_inverse,
-      false,
-      util.matrixInverse(offset)
-    );
+    gl.uniform1f(program.u_particle_size, this.particleSize);
 
+    // Set wind data uniforms
     gl.uniform2f(program.u_wind_min, this.windData.uMin, this.windData.vMin);
     gl.uniform2f(program.u_wind_max, this.windData.uMax, this.windData.vMax);
-
-    gl.uniformMatrix4fv(program.u_matrix, false, matrix);
     gl.uniformMatrix4fv(program.u_data_matrix, false, data.matrix);
 
-    gl.uniform1f(program.u_particle_size, this.particleSize);
+    // For trails, use full opacity - the fading happens in the framebuffer
+    gl.uniform1f(program.u_trail_alpha, 1.0);
 
     gl.drawArrays(gl.POINTS, 0, this._numParticles);
   }

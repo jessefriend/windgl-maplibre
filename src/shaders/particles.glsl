@@ -32,6 +32,8 @@ uniform mat4 u_matrix;
 uniform mat4 u_offset;
 
 uniform float u_particle_size;
+uniform float u_trail_opacity;
+uniform float u_trail_alpha;
 
 attribute vec2 a_pos;
 
@@ -150,10 +152,10 @@ export void particleDrawFragment() {
     vec2 velocity = mix(u_wind_min, u_wind_max, windTexture(transform(v_particle_pos, u_data_matrix)));
     float speed_t = length(velocity) / length(u_wind_max);
 
-    // // color ramp is encoded in a 16x16 texture
     vec2 ramp_pos = vec2(
         fract(16.0 * speed_t),
         floor(16.0 * speed_t) / 16.0);
 
-    gl_FragColor = texture2D(u_color_ramp, ramp_pos);
+    vec4 color = texture2D(u_color_ramp, ramp_pos);
+    gl_FragColor = vec4(color.rgb, color.a * u_trail_alpha);
 }
