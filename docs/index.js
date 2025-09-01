@@ -6251,8 +6251,8 @@
           },
           "particle-trail": {
             type: "number",
-            minimum: 0,
-            maximum: 1,
+            minimum: 1,
+            maximum: 2,
             default: 0.05,
             transition: true,
             expression: { interpolated: true, parameters: ["zoom"] },
@@ -6654,8 +6654,9 @@
       // Allow very long trails by fading more slowly
       var fadeRate = Math.min(
         0.995,
-        0.9 + (this.particleTrail || 0.05) * 0.095
+        0.99 + (this.particleTrail || 0.05) * 0.095
       );
+
       gl.uniform1f(this.fadeProgram.u_fade, fadeRate);
       gl.uniform1i(this.fadeProgram.u_texture, 0);
 
@@ -7075,7 +7076,7 @@
             "particle-speed": [
               "interpolate", ["linear"], ["zoom"],
               0, 0.9,
-              8, 1.5
+              8, 6.0
             ],
 
             // Color ramp driven by "speed" property

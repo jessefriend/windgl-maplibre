@@ -55,7 +55,7 @@ var configs = [
           "particle-speed": [
             "interpolate", ["linear"], ["zoom"],
             0, 0.9,
-            8, 1.5
+            8, 6.0
           ],
 
           // Color ramp driven by "speed" property

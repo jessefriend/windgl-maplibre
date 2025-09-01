@@ -31,8 +31,8 @@ class Particles extends Layer {
         },
         "particle-trail": {
           type: "number",
-          minimum: 0,
-          maximum: 1,
+          minimum: 1,
+          maximum: 2,
           default: 0.05,
           transition: true,
           expression: { interpolated: true, parameters: ["zoom"] },
@@ -429,8 +429,9 @@ class Particles extends Layer {
     // Allow very long trails by fading more slowly
     const fadeRate = Math.min(
       0.995,
-      0.9 + (this.particleTrail || 0.05) * 0.095
+      0.99 + (this.particleTrail || 0.05) * 0.095
     );
+
     gl.uniform1f(this.fadeProgram.u_fade, fadeRate);
     gl.uniform1i(this.fadeProgram.u_texture, 0);
 
