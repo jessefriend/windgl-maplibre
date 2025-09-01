@@ -74,10 +74,13 @@ Customizable with:
 - `sample-opacity`
 
 ### Particles
-Animated particles advected by the wind field.  
+Animated particles advected by the wind field.
 Customizable with:
 - `particle-color`
 - `particle-speed`
+- `particle-size`
+- `particle-trail`
+- `trail-substeps`
 
 ### Arrows
 Vector field arrows at grid points.  
