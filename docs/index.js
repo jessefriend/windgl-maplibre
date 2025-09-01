@@ -6257,6 +6257,14 @@
             transition: true,
             expression: { interpolated: true, parameters: ["zoom"] },
             "property-type": "data-constant"
+          },
+          "trail-substeps": {
+            type: "number",
+            minimum: 1,
+            maximum: 20,
+            default: 8,
+            expression: { interpolated: true, parameters: ["zoom"] },
+            "property-type": "data-constant"
           }
         },
         options
@@ -6272,7 +6280,7 @@
 
       // Trail effect
       this.trailEnabled = false;
-      this.trailFadeRate = 0.98;
+      this.trailFadeRate = 0.995;
     }
 
     if ( Layer ) Particles.__proto__ = Layer;
@@ -6643,8 +6651,11 @@
       bindTexture(gl, this.trailTexture, 0);
       bindAttribute(gl, this.fadeQuadBuffer, this.fadeProgram.a_position, 2);
 
-      // Shorter trails as requested
-      var fadeRate = Math.min(0.98, 0.9 + (this.particleTrail || 0.05) * 0.06);
+      // Allow very long trails by fading more slowly
+      var fadeRate = Math.min(
+        0.995,
+        0.9 + (this.particleTrail || 0.05) * 0.095
+      );
       gl.uniform1f(this.fadeProgram.u_fade, fadeRate);
       gl.uniform1i(this.fadeProgram.u_texture, 0);
 
@@ -6656,7 +6667,7 @@
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
       var tiles = this.visibleParticleTiles();
-      var SUBSTEPS = 3;
+      var SUBSTEPS = Math.max(1, Math.floor(this.trailSubsteps || 8));
       var baseAlpha = 1.0 / SUBSTEPS;
 
       var loop = function ( s ) {
@@ -7079,7 +7090,8 @@
               60,  "#f46d43",
               100, "#d53e4f"
             ],
-            "particle-trail": 1.0
+            "particle-trail": 1.0,
+            "trail-substeps": 8
           }
         }
       ],

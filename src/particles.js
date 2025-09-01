@@ -37,6 +37,14 @@ class Particles extends Layer {
           transition: true,
           expression: { interpolated: true, parameters: ["zoom"] },
           "property-type": "data-constant"
+        },
+        "trail-substeps": {
+          type: "number",
+          minimum: 1,
+          maximum: 20,
+          default: 8,
+          expression: { interpolated: true, parameters: ["zoom"] },
+          "property-type": "data-constant"
         }
       },
       options
@@ -52,7 +60,7 @@ class Particles extends Layer {
 
     // Trail effect
     this.trailEnabled = false;
-    this.trailFadeRate = 0.98;
+    this.trailFadeRate = 0.995;
   }
 
   visibleParticleTiles() {
@@ -418,8 +426,11 @@ class Particles extends Layer {
     util.bindTexture(gl, this.trailTexture, 0);
     util.bindAttribute(gl, this.fadeQuadBuffer, this.fadeProgram.a_position, 2);
 
-    // Shorter trails as requested
-    const fadeRate = Math.min(0.98, 0.9 + (this.particleTrail || 0.05) * 0.06);
+    // Allow very long trails by fading more slowly
+    const fadeRate = Math.min(
+      0.995,
+      0.9 + (this.particleTrail || 0.05) * 0.095
+    );
     gl.uniform1f(this.fadeProgram.u_fade, fadeRate);
     gl.uniform1i(this.fadeProgram.u_texture, 0);
 
@@ -431,7 +442,7 @@ class Particles extends Layer {
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
     const tiles = this.visibleParticleTiles();
-    const SUBSTEPS = 3;
+    const SUBSTEPS = Math.max(1, Math.floor(this.trailSubsteps || 8));
     const baseAlpha = 1.0 / SUBSTEPS;
 
     for (let s = 0; s < SUBSTEPS; s++) {
