@@ -94,12 +94,13 @@ class Particles extends Layer {
   move() {
     super.move();
     const tiles = this.visibleParticleTiles();
-    Object.keys(this._particleTiles).forEach((tile) => {
-      if (tiles.filter((t) => t.toString() == tile).length === 0) {
+    Object.keys(this._particleTiles).forEach((key) => {
+      if (tiles.filter((t) => t.toString() == key).length === 0) {
         // cleanup
-        this.gl.deleteTexture(tile.particleStateTexture0);
-        this.gl.deleteTexture(tile.particleStateTexture1);
-        delete this._particleTiles[tile];
+        const p = this._particleTiles[key];
+        this.gl.deleteTexture(p.particleStateTexture0);
+        this.gl.deleteTexture(p.particleStateTexture1);
+        delete this._particleTiles[key];
       }
     });
     tiles.forEach((tile) => {

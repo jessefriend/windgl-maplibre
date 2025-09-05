@@ -642,12 +642,13 @@ var Particles = /*@__PURE__*/(function (Layer) {
 
     Layer.prototype.move.call(this);
     var tiles = this.visibleParticleTiles();
-    Object.keys(this._particleTiles).forEach(function (tile) {
-      if (tiles.filter(function (t) { return t.toString() == tile; }).length === 0) {
+    Object.keys(this._particleTiles).forEach(function (key) {
+      if (tiles.filter(function (t) { return t.toString() == key; }).length === 0) {
         // cleanup
-        this$1$1.gl.deleteTexture(tile.particleStateTexture0);
-        this$1$1.gl.deleteTexture(tile.particleStateTexture1);
-        delete this$1$1._particleTiles[tile];
+        var p = this$1$1._particleTiles[key];
+        this$1$1.gl.deleteTexture(p.particleStateTexture0);
+        this$1$1.gl.deleteTexture(p.particleStateTexture1);
+        delete this$1$1._particleTiles[key];
       }
     });
     tiles.forEach(function (tile) {
