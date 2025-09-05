@@ -6280,7 +6280,6 @@
 
       // Trail effect
       this.trailEnabled = false;
-      this.trailFadeRate = 0.995;
     }
 
     if ( Layer ) Particles.__proto__ = Layer;
@@ -6651,7 +6650,7 @@
       bindTexture(gl, this.trailTexture, 0);
       bindAttribute(gl, this.fadeQuadBuffer, this.fadeProgram.a_position, 2);
 
-      // Allow very long trails by fading more slowly
+      // Allow very long trails by fading more slowly based on the particle-trail setting
       var fadeRate = Math.min(
         0.995,
         0.99 + (this.particleTrail || 0.05) * 0.095
