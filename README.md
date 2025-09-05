@@ -79,7 +79,7 @@ Customizable with:
 - `particle-color`
 - `particle-speed`
 - `particle-size`
-- `particle-trail`
+- `particle-trail` (default `0.05`, max `2`)
 - `trail-substeps`
 
 ### Arrows

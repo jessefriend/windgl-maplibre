@@ -70,7 +70,8 @@ var configs = [
             60,  "#f46d43",
             100, "#d53e4f"
           ],
-          "particle-trail": 1.0,
+          // Values above 1 leave longer, slower-fading trails (max 2)
+          "particle-trail": 1.5,
           "trail-substeps": 8
         }
       }
