@@ -1,6 +1,5 @@
 import * as util from "./util";
 import Layer from "./layer";
-
 import { particleUpdate, particleDraw } from "./shaders/particles.glsl";
 
 class Particles extends Layer {
@@ -11,7 +10,7 @@ class Particles extends Layer {
           type: "color",
           default: "white",
           expression: { interpolated: true, parameters: ["zoom", "feature"] },
-          "property-type": "data-driven"
+          "property-type": "data-driven",
         },
         "particle-speed": {
           type: "number",
@@ -19,7 +18,7 @@ class Particles extends Layer {
           default: 0.75,
           transition: true,
           expression: { interpolated: true, parameters: ["zoom"] },
-          "property-type": "data-constant"
+          "property-type": "data-constant",
         },
         "particle-size": {
           type: "number",
@@ -27,16 +26,16 @@ class Particles extends Layer {
           default: 2.0,
           transition: true,
           expression: { interpolated: true, parameters: ["zoom"] },
-          "property-type": "data-constant"
+          "property-type": "data-constant",
         },
         "particle-trail": {
           type: "number",
-          minimum: 1,
-          maximum: 2,
-          default: 0.05,
+          minimum: 0.01,
+          maximum: 1.0,
+          default: 0.3,
           transition: true,
           expression: { interpolated: true, parameters: ["zoom"] },
-          "property-type": "data-constant"
+          "property-type": "data-constant",
         },
         "trail-substeps": {
           type: "number",
@@ -44,28 +43,27 @@ class Particles extends Layer {
           maximum: 20,
           default: 8,
           expression: { interpolated: true, parameters: ["zoom"] },
-          "property-type": "data-constant"
-        }
+          "property-type": "data-constant",
+        },
       },
       options
     );
+
     this.pixelToGridRatio = 20;
     this.tileSize = 1024;
 
     this.dropRate = 0.003;
     this.dropRateBump = 0.01;
-    this._numParticles = 5000;
+    this._numParticles = 1500;
 
     this._particleTiles = {};
-
-    // Trail effect
-    this.trailEnabled = false;
+    this.trailEnabled = true; // enable trails
   }
 
   visibleParticleTiles() {
     return this.computeVisibleTiles(2, this.tileSize, {
       minzoom: 0,
-      maxzoom: this.windData.maxzoom + 3
+      maxzoom: this.windData.maxzoom + 3,
     });
   }
 
@@ -96,7 +94,6 @@ class Particles extends Layer {
     const tiles = this.visibleParticleTiles();
     Object.keys(this._particleTiles).forEach((key) => {
       if (tiles.filter((t) => t.toString() == key).length === 0) {
-        // cleanup
         const p = this._particleTiles[key];
         this.gl.deleteTexture(p.particleStateTexture0);
         this.gl.deleteTexture(p.particleStateTexture1);
@@ -138,34 +135,55 @@ class Particles extends Layer {
     this.initializeParticles(gl, this._numParticles);
 
     this.nullTexture = util.createTexture(gl, gl.NEAREST, new Uint8Array([0, 0, 0, 0]), 1, 1);
-
-    this.nullTile = {
-      getTexture: () => this.nullTexture
-    };
+    this.nullTile = { getTexture: () => this.nullTexture };
 
     // Setup trail rendering components
     this.setupTrailRendering(gl);
+
+    // Ensure transparent clears (once)
+    gl.clearColor(0, 0, 0, 0);
+    
+    // Make sure we have a color ramp texture (or we stamp invisible pixels)
+    if (!this.colorRampTexture) {
+      // Use your current style property if available, else a simple white ramp
+      try {
+        this.setParticleColor(this.properties["particle-color"].default);
+      } catch (e) {
+        // Fallback: 256x1 white ramp
+        const ramp = new Uint8Array(256 * 4);
+        for (let i = 0; i < 256; i++) {
+          ramp[i * 4 + 0] = 255;
+          ramp[i * 4 + 1] = 255;
+          ramp[i * 4 + 2] = 255;
+          ramp[i * 4 + 3] = 255;
+        }
+        this.colorRampTexture = util.createTexture(gl, gl.LINEAR, ramp, 256, 1);
+      }
+    }
+
 
     this._onResize = () => this.setupTrailRendering(gl);
     map.on("resize", this._onResize);
   }
 
-  // mapbox prerender callback
+  // maplibre prerender callback (update physics)
   prerender(gl) {
-    if (this.windData) {
-      const blendingEnabled = gl.isEnabled(gl.BLEND);
-      gl.disable(gl.BLEND);
-      const tiles = this.visibleParticleTiles();
-      tiles.forEach((tile) => {
-        const found = this.findAssociatedDataTiles(tile);
-        if (found) {
-          this.update(gl, this._particleTiles[tile], found);
-          this._particleTiles[tile].updated = true;
-        }
-      });
-      if (blendingEnabled) gl.enable(gl.BLEND);
-      this.map.triggerRepaint();
-    }
+    if (!this.windData) return;
+
+    const blendingEnabled = gl.isEnabled(gl.BLEND);
+    gl.disable(gl.BLEND); // we render into an RGBA state texture, no blending
+
+    const tiles = this.visibleParticleTiles();
+    tiles.forEach((tile) => {
+      const found = this.findAssociatedDataTiles(tile);
+      if (found) {
+        this.update(gl, this._particleTiles[tile], found);
+        this._particleTiles[tile].updated = true;
+      }
+    });
+
+    if (blendingEnabled) gl.enable(gl.BLEND);
+    this.map.triggerRepaint();
   }
 
   computeLoadableTiles() {
@@ -225,6 +243,7 @@ class Particles extends Layer {
     const tileBottomLeft = this._tiles[found.neighbor(-1, 1)];
     const tileBottomCenter = this._tiles[found.neighbor(0, 1)];
     const tileBottomRight = this._tiles[found.neighbor(1, 1)];
+
     matrix.translateSelf(-0.5, -0.5);
     matrix.scaleSelf(2, 2);
 
@@ -254,7 +273,7 @@ class Particles extends Layer {
       tileMiddleRight: tileMiddleRight || this.nullTile,
       tileBottomLeft: tileBottomLeft || this.nullTile,
       tileBottomCenter: tileBottomCenter || this.nullTile,
-      tileBottomRight: tileBottomRight || this.nullTile
+      tileBottomRight: tileBottomRight || this.nullTile,
     };
   }
 
@@ -278,7 +297,6 @@ class Particles extends Layer {
     util.bindTexture(gl, data.tileBottomRight.getTexture(gl), 9);
 
     gl.uniform1i(program.u_particles, 0);
-
     gl.uniform1i(program.u_wind_top_left, 1);
     gl.uniform1i(program.u_wind_top_center, 2);
     gl.uniform1i(program.u_wind_top_right, 3);
@@ -355,17 +373,18 @@ class Particles extends Layer {
     this.lastZoom = this.map.getZoom();
     this._trailWidth = width;
     this._trailHeight = height;
-    this._trailReadyFrames = 0; // warm-up
+    this._trailReadyFrames = 0;
+    this._frameCounter = 0;
   }
 
   render(gl, matrix) {
-    if (!this.windData) return;
+    // Reset depth and blending state (MapLibre-friendly)
+    gl.disable(gl.DEPTH_TEST);
+    gl.depthMask(false);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); // premultiplied default
 
-    // Recreate trail textures if zoom changed significantly
-    const currentZoom = this.map.getZoom();
-    if (Math.abs(currentZoom - (this.lastZoom || 0)) > 0.5) {
-      this.setupTrailRendering(gl);
-    }
+    if (!this.windData) return;
 
     if (this.trailEnabled) {
       this.renderWithTrails(gl, matrix);
@@ -373,14 +392,17 @@ class Particles extends Layer {
     } else {
       this.renderNormal(gl, matrix);
     }
+    
   }
 
   renderNormal(gl, matrix) {
     const tiles = this.visibleParticleTiles();
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); // premultiplied
+
     tiles.forEach((tile) => {
       const found = this.findAssociatedDataTiles(tile);
       if (!found) return;
-      // No trails: single stamp at t=1, alpha=1
       this.draw(gl, matrix, this._particleTiles[tile], tile.viewMatrix(2), found, 1.0, 1.0);
     });
   }
@@ -395,6 +417,7 @@ class Particles extends Layer {
       }
     `;
 
+    // NOTE: color * u_fade preserves premultiplied alpha
     const fragmentSource = `
       precision mediump float;
       uniform sampler2D u_texture;
@@ -402,7 +425,7 @@ class Particles extends Layer {
       varying vec2 v_texCoord;
       void main() {
         vec4 color = texture2D(u_texture, v_texCoord);
-        gl_FragColor = vec4(color.rgb, color.a * u_fade);
+        gl_FragColor = color * u_fade;
       }
     `;
 
@@ -413,69 +436,63 @@ class Particles extends Layer {
     );
   }
 
-  // Trail rendering with accumulation + multi-stamp interpolation
+  // Trail rendering with additive stamp & premultiplied composite
   renderWithTrails(gl, matrix) {
-    if (!this.fadeProgram || !this.trailTexture) return this.renderNormal(gl, matrix);
+    if (!this.fadeProgram || !this.trailTexture) {
+      return this.renderNormal(gl, matrix);
+    }
 
-    // ----- 1) Fade existing trail into temp FBO -----
+    // --- A) FADE: trailTexture -> tempTrailFramebuffer (no blending)
+    gl.disable(gl.BLEND);
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.tempTrailFramebuffer);
     gl.viewport(0, 0, this._trailWidth, this._trailHeight);
-    gl.clear(gl.COLOR_BUFFER_BIT);
 
     gl.useProgram(this.fadeProgram.program);
     util.bindTexture(gl, this.trailTexture, 0);
     util.bindAttribute(gl, this.fadeQuadBuffer, this.fadeProgram.a_position, 2);
 
-    // Allow very long trails by fading more slowly based on the particle-trail setting
-    const fadeRate = Math.min(
-      0.995,
-      0.99 + (this.particleTrail || 0.05) * 0.095
-    );
-
-    gl.uniform1f(this.fadeProgram.u_fade, fadeRate);
+    const trailSetting = this.particleTrail || 0.3;
+    const fade = Math.min(0.99, Math.max(0.94, 1.0 - 0.1 * trailSetting));
     gl.uniform1i(this.fadeProgram.u_texture, 0);
-
-    gl.disable(gl.BLEND);
+    gl.uniform1f(this.fadeProgram.u_fade, fade);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
-    // ----- 2) Render new particles (multi-stamp) into the same temp FBO -----
+    // --- B) STAMP: draw current particles additively into tempTrailFramebuffer ---
     gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.blendFunc(gl.ONE, gl.ONE); // additive (premultiplied-friendly) in FBO
 
     const tiles = this.visibleParticleTiles();
-    const SUBSTEPS = Math.max(1, Math.floor(this.trailSubsteps || 8));
-    const baseAlpha = 1.0 / SUBSTEPS;
 
-    for (let s = 0; s < SUBSTEPS; s++) {
-      const t = (s + 1) / SUBSTEPS; // (0,1]
-      tiles.forEach((tile) => {
-        const found = this.findAssociatedDataTiles(tile);
-        if (!found) return;
-        this.draw(gl, matrix, this._particleTiles[tile], tile.viewMatrix(2), found, t, baseAlpha);
-      });
-    }
+    // 1) Particles (points)
+    tiles.forEach((tile) => {
+      const found = this.findAssociatedDataTiles(tile);
+      if (!found) return;
+      const stampAlpha = 0.12 + 0.38 * trailSetting; // 0.12..0.5
+      this.draw(gl, matrix, this._particleTiles[tile], tile.viewMatrix(2), found, 1.0, stampAlpha);
+    });
 
-    // ----- 3) Swap ping-pong trail textures -----
+    // (Optional) If you keep line trails, call drawTrailLines here with the same additive blend.
+
+    // --- C) SWAP & COMPOSITE to the screen (premultiplied alpha) ---
     [this.trailTexture, this.tempTrailTexture] = [this.tempTrailTexture, this.trailTexture];
     [this.trailFramebuffer, this.tempTrailFramebuffer] = [this.tempTrailFramebuffer, this.trailFramebuffer];
 
-    // ----- 4) Composite to default framebuffer at native resolution -----
     const vp = gl.getParameter(gl.VIEWPORT);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.viewport(vp[0], vp[1], vp[2], vp[3]);
 
+    gl.enable(gl.BLEND);
+    gl.blendFuncSeparate(gl.ONE, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+
     gl.useProgram(this.fadeProgram.program);
     util.bindTexture(gl, this.trailTexture, 0);
     util.bindAttribute(gl, this.fadeQuadBuffer, this.fadeProgram.a_position, 2);
     gl.uniform1i(this.fadeProgram.u_texture, 0);
-    gl.uniform1f(this.fadeProgram.u_fade, 1.0);
-
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.uniform1f(this.fadeProgram.u_fade, 1.0); // no extra fade at composite
     gl.drawArrays(gl.TRIANGLES, 0, 6);
-    gl.disable(gl.BLEND);
   }
 
-  // Draw a single pass; now accepts substep 't' and 'alpha' so uniforms are set on the correct program
+  // Draw a single particle pass (points)
   draw(gl, matrix, tile, offset, data, interpT = 1.0, trailAlpha = 1.0) {
     const program = this.drawProgram;
     gl.useProgram(program.program);
@@ -498,7 +515,7 @@ class Particles extends Layer {
 
     util.bindAttribute(gl, this.particleIndexBuffer, program.a_index, 1);
 
-    // Sampler bindings
+    // Samplers
     gl.uniform1i(program.u_particles, 0);
     gl.uniform1i(program.u_particles_prev, 11);
     gl.uniform1i(program.u_color_ramp, 1);
@@ -512,17 +529,22 @@ class Particles extends Layer {
     gl.uniform1i(program.u_wind_bottom_center, 9);
     gl.uniform1i(program.u_wind_bottom_right, 10);
 
-    // Other uniforms
+    // Uniforms
     gl.uniform1f(program.u_particles_res, this.particleStateResolution);
     gl.uniformMatrix4fv(program.u_matrix, false, matrix);
     gl.uniformMatrix4fv(program.u_offset, false, offset);
-    gl.uniform1f(program.u_particle_size, this.particleSize);
+
+    // Particle size scales with zoom
+    const currentZoom = this.map.getZoom();
+    const zoomScale = Math.max(1.0, Math.min(4.0, Math.pow(2, currentZoom - 2)));
+    const adjustedParticleSize = this.particleSize * zoomScale;
+    gl.uniform1f(program.u_particle_size, adjustedParticleSize);
 
     gl.uniform2f(program.u_wind_min, this.windData.uMin, this.windData.vMin);
     gl.uniform2f(program.u_wind_max, this.windData.uMax, this.windData.vMax);
     gl.uniformMatrix4fv(program.u_data_matrix, false, data.matrix);
 
-    // Substep interpolation + per-substep alpha (set on the correct program)
+    // Interp step & alpha into shader
     if (program.u_interp_t) gl.uniform1f(program.u_interp_t, interpT);
     if (program.u_trail_alpha) gl.uniform1f(program.u_trail_alpha, trailAlpha);
 

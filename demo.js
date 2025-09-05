@@ -51,14 +51,10 @@ var configs = [
         type: "particles",
         after: null,
         properties: {
-          // Speed changes with zoom
-          "particle-speed": [
-            "interpolate", ["linear"], ["zoom"],
-            0, 0.9,
-            8, 6.0
-          ],
-
-          // Color ramp driven by "speed" property
+          "particle-speed": 0.75,
+          "particle-size": 2.0,
+          "particle-trail": 0.3,
+          "trail-substeps": 8,
           "particle-color": [
             "interpolate", ["linear"], ["get", "speed"],
             0,   "#3288bd",
@@ -69,12 +65,10 @@ var configs = [
             50,  "#fdae61",
             60,  "#f46d43",
             100, "#d53e4f"
-          ],
-          // Values above 1 leave longer, slower-fading trails (max 2)
-          "particle-trail": 1.5,
-          "trail-substeps": 8
+          ]
         }
       }
+
     ],
     flyTo: { zoom: 2, center: [50, -10] }
   },

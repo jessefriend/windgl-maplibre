@@ -162,8 +162,9 @@ export void particleDrawVertex() {
 }
 
 export void particleDrawFragment() {
-    vec2 velocity = mix(u_wind_min, u_wind_max, windTexture(transform(v_particle_pos, u_data_matrix)));
-    float speed_t = length(velocity) / length(u_wind_max);
+    vec2 wind_uv = transform(v_particle_pos, u_data_matrix);
+    vec2 velocity = mix(u_wind_min, u_wind_max, lookup_wind(wind_uv));
+    float speed_t = length(velocity) / max(1e-6, length(u_wind_max)); // Avoid division by zero
 
     vec2 ramp_pos = vec2(fract(16.0 * speed_t), floor(16.0 * speed_t) / 16.0);
     vec4 color = texture2D(u_color_ramp, ramp_pos);
@@ -171,7 +172,9 @@ export void particleDrawFragment() {
     // soft-circle alpha based on gl_PointCoord
     vec2 p = gl_PointCoord * 2.0 - 1.0;
     float r2 = dot(p, p);
-    float mask = smoothstep(1.0, 0.8, r2); // feathered edge
+    float mask = smoothstep(1.0, 0.8, r2);
 
-    gl_FragColor = vec4(color.rgb, color.a * u_trail_alpha * mask);
+    // Ensure minimum visibility and proper alpha blending
+    float finalAlpha = max(0.1, color.a * u_trail_alpha * mask);
+    gl_FragColor = vec4(color.rgb * finalAlpha, finalAlpha); // Premultiplied alpha
 }
