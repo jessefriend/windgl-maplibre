@@ -60,7 +60,6 @@ class Particles extends Layer {
 
     // Trail effect
     this.trailEnabled = false;
-    this.trailFadeRate = 0.995;
   }
 
   visibleParticleTiles() {
@@ -426,7 +425,7 @@ class Particles extends Layer {
     util.bindTexture(gl, this.trailTexture, 0);
     util.bindAttribute(gl, this.fadeQuadBuffer, this.fadeProgram.a_position, 2);
 
-    // Allow very long trails by fading more slowly
+    // Allow very long trails by fading more slowly based on the particle-trail setting
     const fadeRate = Math.min(
       0.995,
       0.99 + (this.particleTrail || 0.05) * 0.095
