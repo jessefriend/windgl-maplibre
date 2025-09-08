@@ -321,6 +321,10 @@ class Particles extends Layer {
   renderWithTrails(gl, matrix) {
     if (!this.trailFramebuffer) return;
 
+    // Get current zoom for trail adjustments
+    const currentZoom = this.map && this.map.getZoom ? this.map.getZoom() : 0;
+    const zoomFactor = Math.max(0.5, Math.min(2.0, currentZoom / 10.0)); // 0.5 to 2.0 based on zoom
+
     // --- compute dt for time-based fade ---
     var now = typeof performance !== "undefined" && performance.now ? performance.now() : Date.now();
     var dt = 16.7;
@@ -328,13 +332,14 @@ class Particles extends Layer {
     this._fadePrevTime = now;
     dt = Math.max(0.0, Math.min(200.0, dt)) / 1000.0; // clamp to [0..0.2] s
 
-    // More aggressive fade parameters to prevent permanent marks
+    // Zoom-dependent fade parameters - longer trails at higher zoom
     const trailSetting = this.particleTrail || 0.3; // 0..1
-    const tau = 0.4 + 0.6 * trailSetting;          // 0.4..1.0 s (shorter decay)
-    const biasPerSec = 0.08 + 0.05 * (1.0 - trailSetting); // 0.13..0.08 (more aggressive)
+    const baseTau = 0.4 + 0.6 * trailSetting;
+    const tau = baseTau * (0.5 + 1.5 * zoomFactor);  // Longer trails at higher zoom (0.5x to 2x)
+    const biasPerSec = (0.08 + 0.05 * (1.0 - trailSetting)) / zoomFactor; // Less aggressive bias at higher zoom
     const fadeFactor = Math.exp(-dt / Math.max(1e-4, tau));
     const biasDt = biasPerSec * dt;
-    const cutoff = 0.035; // Higher cutoff to eliminate lingering traces
+    const cutoff = Math.max(0.015, 0.035 / zoomFactor); // Lower cutoff at higher zoom for longer trails
 
     // A) Clear temp buffer first to ensure no accumulation
     gl.disable(gl.BLEND);
@@ -358,8 +363,9 @@ class Particles extends Layer {
     gl.blendFuncSeparate(gl.ONE, gl.ONE, gl.ONE, gl.ONE);
     gl.useProgram(this.drawProgram.program);
 
-    // Reduce stamp intensity to prevent over-accumulation
-    const stampAlpha = 0.03 + 0.05 * trailSetting; // 0.03..0.08 per frame (reduced)
+    // Zoom-dependent stamp intensity - more opaque trails at higher zoom
+    const baseStampAlpha = 0.03 + 0.05 * trailSetting;
+    const stampAlpha = baseStampAlpha * (0.7 + 0.8 * zoomFactor); // 0.7x to 1.5x based on zoom
     gl.uniform1f(this.drawProgram.u_alpha, stampAlpha);
 
     const tiles = this.visibleParticleTiles();
@@ -396,20 +402,22 @@ class Particles extends Layer {
     gl.uniform1f(this.fadeProgram.u_cutoff, 0.0);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
-    // F) Draw bright heads on top with reduced alpha
+    // F) Draw bright heads on top with zoom-dependent alpha
     gl.useProgram(this.drawProgram.program);
-    gl.uniform1f(this.drawProgram.u_alpha, 0.7); // Reduced from 0.85
+    const headAlpha = 0.6 + 0.3 * zoomFactor; // 0.6 to 0.9 based on zoom
+    gl.uniform1f(this.drawProgram.u_alpha, headAlpha);
 
     for (var j = 0; j < tiles.length; j++) {
       const tile2 = tiles[j];
       const found2 = this.findAssociatedDataTiles(tile2);
       if (!found2) continue;
-      this._drawPoints(gl, matrix, this._particleTiles[tile2], tile2.viewMatrix(2), found2, 1.2); // Reduced size boost
+      this._drawPoints(gl, matrix, this._particleTiles[tile2], tile2.viewMatrix(2), found2, 1.0 + 0.3 * zoomFactor); // Larger heads at higher zoom
     }
 
-    // Periodic trail clearing to prevent any accumulation
+    // Less frequent periodic clearing at higher zooms (longer trails need less clearing)
     this._frameCount = (this._frameCount || 0) + 1;
-    if (this._frameCount % 300 === 0) { // Every 5 seconds at 60fps
+    const clearInterval = Math.floor(300 + 200 * zoomFactor); // 300-500 frames based on zoom
+    if (this._frameCount % clearInterval === 0) {
       this._clearTrails();
     }
   }

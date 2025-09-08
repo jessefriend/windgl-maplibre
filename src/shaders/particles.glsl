@@ -147,11 +147,12 @@ export void particleDrawVertex() {
 }
 
 export void particleDrawFragment() {
-  // Soft-edged disc mask for round heads
+  // Create smooth circular particle heads
   vec2 pc = gl_PointCoord * 2.0 - 1.0;   // [-1,1]
   float r = length(pc);
-  // feather ~6% of radius
-  float m = smoothstep(1.0, 0.94, 1.0 - r);
+  
+  // Smooth circular falloff with softer edges
+  float m = smoothstep(1.0, 0.85, r);    // Softer edge transition
   if (m <= 0.0) discard;
 
   // color ramp by local wind speed
@@ -163,11 +164,14 @@ export void particleDrawFragment() {
   vec2 ramp_pos = vec2(fract(16.0 * speed_t), floor(16.0 * speed_t) / 16.0);
   vec4 color    = texture2D(u_color_ramp, ramp_pos);
 
-  float a = u_alpha * m;
-  if (a < 0.01) discard;
+  // Add subtle glow effect for better visibility
+  float glow = smoothstep(1.0, 0.6, r) * 0.3;
+  float totalAlpha = (m + glow) * u_alpha;
+  
+  if (totalAlpha < 0.01) discard;
 
   // premultiplied alpha output
-  gl_FragColor = vec4(color.rgb * a, a);
+  gl_FragColor = vec4(color.rgb * totalAlpha, totalAlpha);
 }
 
 /* ================================================================
