@@ -1,10 +1,12 @@
 precision highp float;
 
 #pragma glslify: wgs84ToMercator = require(./wgs84ToMercator)
-#pragma glslify: transform = require(./transform)
+#pragma glslify: transform       = require(./transform)
 
-uniform sampler2D u_particles;        // current particle state
-uniform sampler2D u_particles_prev;   // NEW: previous particle state (ping-pong other tex)
+/* ========= Shared samplers & params used across passes ========= */
+
+uniform sampler2D u_particles;        // particle state (curr)
+uniform sampler2D u_color_ramp;
 
 uniform sampler2D u_wind_top_left;
 uniform sampler2D u_wind_top_center;
@@ -16,165 +18,199 @@ uniform sampler2D u_wind_bottom_left;
 uniform sampler2D u_wind_bottom_center;
 uniform sampler2D u_wind_bottom_right;
 
-uniform sampler2D u_color_ramp;
-
-uniform vec2 u_wind_res;
-uniform vec2 u_wind_min;
-uniform vec2 u_wind_max;
+uniform vec2  u_wind_res;
+uniform vec2  u_wind_min;
+uniform vec2  u_wind_max;
 uniform float u_rand_seed;
 uniform float u_speed_factor;
 uniform float u_drop_rate;
 uniform float u_drop_rate_bump;
-uniform mat4 u_data_matrix;
-uniform bool u_initialize;
+uniform mat4  u_data_matrix;
+uniform bool  u_initialize;
+
 uniform float u_particles_res;
-uniform mat4 u_matrix;
-uniform mat4 u_offset;
+uniform mat4  u_matrix;
+uniform mat4  u_offset;
 
-uniform float u_particle_size;
-uniform float u_trail_opacity;
-uniform float u_trail_alpha;
+uniform float u_particle_size;     // px size for heads (draw pass)
+uniform vec2  u_viewport;          // only used by some draw variants; harmless here
 
-uniform float u_interp_t;             // NEW: 0..1 substep along prev->curr (set from JS)
+/* ========= Common helpers ========= */
 
-attribute vec2 a_pos;
-
-varying vec2 v_tex_pos;
-
-export void particleUpdateVertex() {
-    v_tex_pos = a_pos;
-    gl_Position = vec4(1.0 - 2.0 * a_pos, 0.0, 1.0);
-}
-
-// pseudo-random generator
-const vec3 rand_constants = vec3(12.9898, 78.233, 4375.85453);
+const vec3 RAND_C = vec3(12.9898, 78.233, 4375.85453);
 float rand(const vec2 co) {
-    float t = dot(rand_constants.xy, co);
-    return fract(sin(t) * (rand_constants.z + t));
+  float t = dot(RAND_C.xy, co);
+  return fract(sin(t) * (RAND_C.z + t));
 }
 
-// Fetches the proper wind speed from a 3x3 grid of textures
-// input should be in the range of -1..2
+// 3x3 tile lookup (input in -1..2)
 vec2 windTexture(const vec2 uv) {
-    if (uv.x > 1. && uv.y > 1.) {
-        return texture2D(u_wind_bottom_right, uv - vec2(1.0, 1.0)).rg;
-    } else if (uv.x > 0. && uv.y > 1.) {
-        return texture2D(u_wind_bottom_center, uv - vec2(0.0, 1.0)).rg;
-    } else if (uv.y > 1.) {
-        return texture2D(u_wind_bottom_left, uv - vec2(-1.0, 1.0)).rg;
-    } else if (uv.x > 1. && uv.y > 0.) {
-        return texture2D(u_wind_middle_right, uv - vec2(1.0, 0.0)).rg;
-    } else if (uv.x > 0. && uv.y > 0.) {
-        return texture2D(u_wind_middle_center, uv - vec2(0.0, 0.0)).rg;
-    } else if (uv.y > 0.) {
-        return texture2D(u_wind_middle_left, uv - vec2(-1.0, 0.0)).rg;
-    } else if (uv.x > 1.) {
-        return texture2D(u_wind_top_right, uv - vec2(1.0, -1.0)).rg;
-    } else if (uv.x > 0.) {
-        return texture2D(u_wind_top_center, uv - vec2(0.0, -1.0)).rg;
-    } else {
-        return texture2D(u_wind_top_left, uv - vec2(-1.0, -1.0)).rg;
-    }
+  if (uv.x > 1. && uv.y > 1.)      return texture2D(u_wind_bottom_right,  uv - vec2(1.0, 1.0)).rg;
+  else if (uv.x > 0. && uv.y > 1.) return texture2D(u_wind_bottom_center, uv - vec2(0.0, 1.0)).rg;
+  else if (uv.y > 1.)              return texture2D(u_wind_bottom_left,   uv - vec2(-1.0, 1.0)).rg;
+  else if (uv.x > 1. && uv.y > 0.) return texture2D(u_wind_middle_right,  uv - vec2(1.0, 0.0)).rg;
+  else if (uv.x > 0. && uv.y > 0.) return texture2D(u_wind_middle_center, uv - vec2(0.0, 0.0)).rg;
+  else if (uv.y > 0.)              return texture2D(u_wind_middle_left,   uv - vec2(-1.0, 0.0)).rg;
+  else if (uv.x > 1.)              return texture2D(u_wind_top_right,     uv - vec2(1.0, -1.0)).rg;
+  else if (uv.x > 0.)              return texture2D(u_wind_top_center,    uv - vec2(0.0, -1.0)).rg;
+  else                              return texture2D(u_wind_top_left,      uv - vec2(-1.0, -1.0)).rg;
 }
 
 #pragma glslify: lookup_wind = require(./bilinearWind, windTexture=windTexture, windRes=u_wind_res)
 
-// This actually updates the position of a particle
-vec2 update(vec2 pos) {
-    vec2 wind_tex_pos = transform(pos, u_data_matrix);
-    vec2 velocity = mix(u_wind_min, u_wind_max, lookup_wind(wind_tex_pos));
-    float speed_t = length(velocity) / length(u_wind_max);
+vec2 decodePos(vec4 rgba) {
+  // pack: r/g fractional, b/a floor/255
+  return vec2(rgba.r / 255.0 + rgba.b,
+              rgba.g / 255.0 + rgba.a);
+}
 
-    vec2 offset = vec2(velocity.x, -velocity.y) * 0.0001 * u_speed_factor;
+/* ================================================================
+   UPDATE PROGRAM
+   ================================================================ */
 
-    // update particle position
-    pos = fract(1.0 + pos + offset);
+attribute vec2 a_pos;  // fullscreen quad for update pass
+varying vec2 v_tex_pos;
 
-    // a random seed to use for the particle drop
-    vec2 seed = (pos + v_tex_pos) * u_rand_seed;
+export void particleUpdateVertex() {
+  v_tex_pos   = a_pos;
+  gl_Position = vec4(1.0 - 2.0 * a_pos, 0.0, 1.0);
+}
 
-    // drop rate is a chance a particle will restart at random position, to avoid degeneration
-    float drop_rate = u_drop_rate + speed_t * u_drop_rate_bump + smoothstep(0.24, 0.5, length(pos - vec2(0.5, 0.5)) * 0.7);
-    float drop = step(1.0 - drop_rate, rand(seed));
+// Integrate particle in normalized [0,1]^2 space
+vec2 integrate(vec2 pos) {
+  vec2 wind_uv  = transform(pos, u_data_matrix);
+  vec2 velocity = mix(u_wind_min, u_wind_max, lookup_wind(wind_uv));
+  float speed_t = length(velocity) / max(1e-6, length(u_wind_max));
 
-    vec2 random_pos = vec2(
-        0.5 * rand(seed + 1.3) + 0.25,
-        0.5 * rand(seed + 2.1) + 0.25);
-    return mix(pos, random_pos, drop);
+  // screen-space step; note inverted y to match map coords
+  vec2 offset = vec2(velocity.x, -velocity.y) * 0.0001 * u_speed_factor;
+
+  pos = fract(1.0 + pos + offset);
+
+  // stochastic drop to keep distribution healthy
+  vec2 seed = (pos + v_tex_pos) * u_rand_seed;
+  float drop_rate = u_drop_rate
+                  + speed_t * u_drop_rate_bump
+                  + smoothstep(0.24, 0.5, length(pos - vec2(0.5)) * 0.7);
+  float drop = step(1.0 - drop_rate, rand(seed));
+
+  vec2 random_pos = vec2(0.5 * rand(seed + 1.3) + 0.25,
+                         0.5 * rand(seed + 2.1) + 0.25);
+  return mix(pos, random_pos, drop);
 }
 
 export void particleUpdateFragment() {
-    vec4 color = texture2D(u_particles, v_tex_pos);
-    vec2 pos = vec2(
-        color.r / 255.0 + color.b,
-        color.g / 255.0 + color.a); // decode particle position from pixel RGBA
+  vec4 st  = texture2D(u_particles, v_tex_pos);
+  vec2 pos = decodePos(st);
 
-    pos = update(pos);
-    if (u_initialize) {
-        for (int i = 0; i < 100; i++) {
-            pos = update(pos);
-        }
+  pos = integrate(pos);
+  if (u_initialize) {
+    // pre-roll to avoid all particles starting together
+    for (int i = 0; i < 100; i++) {
+      pos = integrate(pos);
     }
+  }
 
-    // encode the new particle position back into RGBA
-    gl_FragColor = vec4(
-        fract(pos * 255.0),
-        floor(pos * 255.0) / 255.0);
+  // encode pos back into RGBA
+  gl_FragColor = vec4(fract(pos * 255.0),
+                      floor(pos * 255.0) / 255.0);
 }
 
-attribute float a_index;
-varying vec2 v_particle_pos;
+/* ================================================================
+   DRAW PROGRAM (POINT SPRITES WITH ROUND HEADS)
+   ================================================================ */
 
-vec2 fix(vec4 inp) {
-    return inp.xy / inp.w;
-}
+attribute float a_index;      // particle id
+varying vec2  v_particle_pos; // for wind color sampling
 
-vec2 decodePos(vec4 rgba) {
-    // same packing as your code
-    return vec2(rgba.r / 255.0 + rgba.b,
-                rgba.g / 255.0 + rgba.a);
-}
+// Alpha for both stamping and head overlay (set from JS)
+uniform float u_alpha;
 
 export void particleDrawVertex() {
-    // index -> uv into state textures
-    float res = u_particles_res;
-    vec2 uv = vec2(fract(a_index / res), floor(a_index / res) / res);
+  // index -> UV in state texture
+  float res = u_particles_res;
+  vec2  uv  = vec2(fract(a_index / res), floor(a_index / res) / res);
 
-    // sample current and previous positions
-    vec4 currRGBA = texture2D(u_particles, uv);
-    vec4 prevRGBA = texture2D(u_particles_prev, uv);
+  vec4 rgba = texture2D(u_particles, uv);
+  vec2 posRel = decodePos(rgba);
 
-    vec2 currRel = decodePos(currRGBA);
-    vec2 prevRel = decodePos(prevRGBA);
+  // world → mercator → clip
+  vec2 posWGS = transform(posRel, u_offset);
+  vec2 posM   = wgs84ToMercator(posWGS);
+  vec4 clip   = u_matrix * vec4(posM, 0.0, 1.0);
 
-    // interpolate along motion (u_interp_t in [0,1])
-    vec2 relWGS84 = mix(prevRel, currRel, clamp(u_interp_t, 0.0, 1.0));
+  gl_Position = clip;
+  gl_PointSize = max(1.0, u_particle_size);
 
-    // pass interpolated relative pos for wind/color lookup in fragment
-    v_particle_pos = relWGS84;
-
-    // project to clip space
-    vec2 worldCoordsWGS84 = transform(relWGS84, u_offset);
-    vec2 worldCoordsMerc = wgs84ToMercator(worldCoordsWGS84);
-
-    gl_PointSize = u_particle_size;
-    gl_Position = u_matrix * vec4(worldCoordsMerc, 0.0, 1.0);
+  // keep for wind color in fragment
+  v_particle_pos = posRel;
 }
 
 export void particleDrawFragment() {
-    vec2 wind_uv = transform(v_particle_pos, u_data_matrix);
-    vec2 velocity = mix(u_wind_min, u_wind_max, lookup_wind(wind_uv));
-    float speed_t = length(velocity) / max(1e-6, length(u_wind_max)); // Avoid division by zero
+  // Soft-edged disc mask for round heads
+  vec2 pc = gl_PointCoord * 2.0 - 1.0;   // [-1,1]
+  float r = length(pc);
+  // feather ~6% of radius
+  float m = smoothstep(1.0, 0.94, 1.0 - r);
+  if (m <= 0.0) discard;
 
-    vec2 ramp_pos = vec2(fract(16.0 * speed_t), floor(16.0 * speed_t) / 16.0);
-    vec4 color = texture2D(u_color_ramp, ramp_pos);
+  // color ramp by local wind speed
+  vec2 wind_uv = transform(v_particle_pos, u_data_matrix);
+  vec2 vel     = mix(u_wind_min, u_wind_max, lookup_wind(wind_uv));
+  float speed_t = clamp(length(vel) / max(1e-6, length(u_wind_max)), 0.0, 1.0);
 
-    // soft-circle alpha based on gl_PointCoord
-    vec2 p = gl_PointCoord * 2.0 - 1.0;
-    float r2 = dot(p, p);
-    float mask = smoothstep(1.0, 0.8, r2);
+  // ramp lookup (matches your existing ramp layout)
+  vec2 ramp_pos = vec2(fract(16.0 * speed_t), floor(16.0 * speed_t) / 16.0);
+  vec4 color    = texture2D(u_color_ramp, ramp_pos);
 
-    // Ensure minimum visibility and proper alpha blending
-    float finalAlpha = color.a * u_trail_alpha * mask;
-    gl_FragColor = vec4(color.rgb * finalAlpha, finalAlpha); // Premultiplied alpha
+  float a = u_alpha * m;
+  if (a < 0.01) discard;
+
+  // premultiplied alpha output
+  gl_FragColor = vec4(color.rgb * a, a);
+}
+
+/* ================================================================
+   FADE PROGRAM (FULLSCREEN QUAD)
+   ================================================================ */
+
+// NOTE: These uniforms are declared ONCE globally above if shared;
+// here we add fade-specific ones. DO NOT re-declare u_cutoff twice.
+uniform sampler2D u_texture;  // previous trail texture
+uniform float     u_fade;     // multiplicative fade = exp(-dt/tau)
+uniform float     u_bias;     // subtractive bias per frame = bias_per_sec * dt
+uniform float     u_cutoff;   // drop tiny alpha (e.g., 0.02)
+
+attribute vec2 a_position;
+varying vec2 v_uv;
+
+export void trailFadeVertex() {
+  v_uv        = a_position * 0.5 + 0.5;   // [-1,1] -> [0,1]
+  gl_Position = vec4(a_position, 0.0, 1.0);
+}
+
+export void trailFadeFragment() {
+  vec4 c = texture2D(u_texture, v_uv);
+
+  // More aggressive fade with better precision
+  float newAlpha = c.a * u_fade - u_bias;
+  
+  // Ensure we don't have floating point precision issues
+  newAlpha = floor(newAlpha * 1000.0) / 1000.0;
+  
+  c.a = max(0.0, newAlpha);
+  c.rgb *= u_fade;
+
+  // More aggressive cutoff with smoother transition
+  if (c.a < u_cutoff) {
+    discard;
+  }
+  
+  // Additional safety: if alpha is very small, make it zero
+  if (c.a < 0.01) {
+    c.a = 0.0;
+    c.rgb = vec3(0.0);
+  }
+
+  gl_FragColor = c;
 }

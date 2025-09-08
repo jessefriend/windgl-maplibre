@@ -50,6 +50,8 @@ var configs = [
       {
         type: "particles",
         after: null,
+        trailMode: "loop",          // 'loop' | 'oneshot' | 'continuous' (default)
+        trailDurationMs: 5000, 
         properties: {
           "particle-speed": 0.75,
           "particle-size": 2.0,
