@@ -6221,7 +6221,7 @@
 
   var particleUpdate = function (gl) { return createProgram(gl, "precision highp float;const vec3 i=vec3(12.9898,78.233,4375.85453);attribute vec2 a_pos;varying vec2 l;void main(){l=a_pos,gl_Position=vec4(1.-2.*a_pos,0.,1.);}", "precision highp float;vec2 k(vec2 b,mat4 c){vec4 a=c*vec4(b,1,1);return a.xy/a.w;}uniform sampler2D u_particles,u_wind_top_left,u_wind_top_center,u_wind_top_right,u_wind_middle_left,u_wind_middle_center,u_wind_middle_right,u_wind_bottom_left,u_wind_bottom_center,u_wind_bottom_right;uniform bool u_initialize;uniform mat4 u_data_matrix;uniform float u_rand_seed,u_speed_factor,u_drop_rate,u_drop_rate_bump;uniform vec2 u_wind_res,u_wind_min,u_wind_max;const vec3 i=vec3(12.9898,78.233,4375.85453);float m(const vec2 b){float a=dot(i.xy,b);return fract(sin(a)*(i.z+a));}vec2 e(const vec2 a){return a.x>1.&&a.y>1.?texture2D(u_wind_bottom_right,a-vec2(1.,1.)).rg:a.x>0.&&a.y>1.?texture2D(u_wind_bottom_center,a-vec2(0.,1.)).rg:a.y>1.?texture2D(u_wind_bottom_left,a-vec2(-1.,1.)).rg:a.x>1.&&a.y>0.?texture2D(u_wind_middle_right,a-vec2(1.,0.)).rg:a.x>0.&&a.y>0.?texture2D(u_wind_middle_center,a-vec2(0.,0.)).rg:a.y>0.?texture2D(u_wind_middle_left,a-vec2(-1.,0.)).rg:a.x>1.?texture2D(u_wind_top_right,a-vec2(1.,-1.)).rg:a.x>0.?texture2D(u_wind_top_center,a-vec2(0.,-1.)).rg:texture2D(u_wind_top_left,a-vec2(-1.,-1.)).rg;}vec2 n(const vec2 d){vec2 a=1./u_wind_res,b=floor(d*u_wind_res)*a,c=fract(d*u_wind_res),f=e(b),g=e(b+vec2(a.x,0)),h=e(b+vec2(0,a.y)),j=e(b+a);return mix(mix(f,g,c.x),mix(h,j,c.x),c.y);}vec2 o(vec4 a){return vec2(a.r/255.+a.b,a.g/255.+a.a);}varying vec2 l;vec2 s(vec2 a){vec2 d=k(a,u_data_matrix),b=mix(u_wind_min,u_wind_max,n(d));float f=length(b)/max(1e-6,length(u_wind_max));vec2 g=vec2(b.x,-b.y)*1e-4*u_speed_factor;a=fract(1.+a+g);vec2 c=(a+l)*u_rand_seed;float h=u_drop_rate+f*u_drop_rate_bump+smoothstep(.24,.5,length(a-vec2(.5))*.7),j=step(1.-h,m(c));vec2 p=vec2(.5*m(c+1.3)+.25,.5*m(c+2.1)+.25);return mix(a,p,j);}void main(){vec4 c=texture2D(u_particles,l);vec2 a=o(c);a=s(a);if(u_initialize)for(int b=0;b<100;b++)a=s(a);gl_FragColor=vec4(fract(a*255.),floor(a*255.)/255.);}"); };
 
-  var particleDraw = function (gl) { return createProgram(gl, "precision highp float;vec2 t(vec2 b){float a=-180.*b.y+90.;a=(180.-57.29578*log(tan(.785398+a*3.141593/360.)))/360.;return vec2(b.x,a);}vec2 k(vec2 b,mat4 c){vec4 a=c*vec4(b,1,1);return a.xy/a.w;}uniform sampler2D u_particles;uniform mat4 u_matrix,u_offset;uniform float u_particles_res,u_particle_size;const vec3 i=vec3(12.9898,78.233,4375.85453);vec2 o(vec4 a){return vec2(a.r/255.+a.b,a.g/255.+a.a);}attribute float a_index;varying vec2 q;void main(){float a=u_particles_res;vec2 c=vec2(fract(a_index/a),floor(a_index/a)/a);vec4 d=texture2D(u_particles,c);vec2 b=o(d),f=k(b,u_offset),g=t(f);vec4 h=u_matrix*vec4(g,0.,1.);gl_Position=h,gl_PointSize=max(1.,u_particle_size),q=b;}", "precision highp float;vec2 k(vec2 b,mat4 c){vec4 a=c*vec4(b,1,1);return a.xy/a.w;}uniform sampler2D u_color_ramp,u_wind_top_left,u_wind_top_center,u_wind_top_right,u_wind_middle_left,u_wind_middle_center,u_wind_middle_right,u_wind_bottom_left,u_wind_bottom_center,u_wind_bottom_right;uniform mat4 u_data_matrix;uniform vec2 u_wind_res,u_wind_min,u_wind_max;const vec3 i=vec3(12.9898,78.233,4375.85453);vec2 e(const vec2 a){return a.x>1.&&a.y>1.?texture2D(u_wind_bottom_right,a-vec2(1.,1.)).rg:a.x>0.&&a.y>1.?texture2D(u_wind_bottom_center,a-vec2(0.,1.)).rg:a.y>1.?texture2D(u_wind_bottom_left,a-vec2(-1.,1.)).rg:a.x>1.&&a.y>0.?texture2D(u_wind_middle_right,a-vec2(1.,0.)).rg:a.x>0.&&a.y>0.?texture2D(u_wind_middle_center,a-vec2(0.,0.)).rg:a.y>0.?texture2D(u_wind_middle_left,a-vec2(-1.,0.)).rg:a.x>1.?texture2D(u_wind_top_right,a-vec2(1.,-1.)).rg:a.x>0.?texture2D(u_wind_top_center,a-vec2(0.,-1.)).rg:texture2D(u_wind_top_left,a-vec2(-1.,-1.)).rg;}vec2 n(const vec2 d){vec2 a=1./u_wind_res,b=floor(d*u_wind_res)*a,c=fract(d*u_wind_res),f=e(b),g=e(b+vec2(a.x,0)),h=e(b+vec2(0,a.y)),j=e(b+a);return mix(mix(f,g,c.x),mix(h,j,c.x),c.y);}varying vec2 q;uniform float u_alpha;void main(){vec2 f=gl_PointCoord*2.-1.;float b=length(f),c=smoothstep(1.,.85,b);if(c<=0.)discard;vec2 g=k(q,u_data_matrix),h=mix(u_wind_min,u_wind_max,n(g));float d=clamp(length(h)/max(1e-6,length(u_wind_max)),0.,1.);vec2 j=vec2(fract(16.*d),floor(16.*d)/16.);vec4 p=texture2D(u_color_ramp,j);float u=smoothstep(1.,.6,b)*.3,a=(c+u)*u_alpha;if(a<.01)discard;gl_FragColor=vec4(p.rgb*a,a);}"); };
+  var particleDraw = function (gl) { return createProgram(gl, "precision highp float;vec2 t(vec2 b){float a=-180.*b.y+90.;a=(180.-57.29578*log(tan(.785398+a*3.141593/360.)))/360.;return vec2(b.x,a);}vec2 k(vec2 b,mat4 c){vec4 a=c*vec4(b,1,1);return a.xy/a.w;}uniform sampler2D u_particles;uniform mat4 u_matrix,u_offset;uniform float u_particles_res,u_particle_size;const vec3 i=vec3(12.9898,78.233,4375.85453);vec2 o(vec4 a){return vec2(a.r/255.+a.b,a.g/255.+a.a);}attribute float a_index;varying vec2 q;void main(){float a=u_particles_res;vec2 c=vec2(fract(a_index/a),floor(a_index/a)/a);vec4 d=texture2D(u_particles,c);vec2 b=o(d),f=k(b,u_offset),g=t(f);vec4 h=u_matrix*vec4(g,0.,1.);gl_Position=h,gl_PointSize=max(1.,u_particle_size),q=b;}", "precision highp float;vec2 k(vec2 b,mat4 c){vec4 a=c*vec4(b,1,1);return a.xy/a.w;}uniform sampler2D u_color_ramp,u_wind_top_left,u_wind_top_center,u_wind_top_right,u_wind_middle_left,u_wind_middle_center,u_wind_middle_right,u_wind_bottom_left,u_wind_bottom_center,u_wind_bottom_right;uniform mat4 u_data_matrix;uniform vec2 u_wind_res,u_wind_min,u_wind_max;const vec3 i=vec3(12.9898,78.233,4375.85453);vec2 e(const vec2 a){return a.x>1.&&a.y>1.?texture2D(u_wind_bottom_right,a-vec2(1.,1.)).rg:a.x>0.&&a.y>1.?texture2D(u_wind_bottom_center,a-vec2(0.,1.)).rg:a.y>1.?texture2D(u_wind_bottom_left,a-vec2(-1.,1.)).rg:a.x>1.&&a.y>0.?texture2D(u_wind_middle_right,a-vec2(1.,0.)).rg:a.x>0.&&a.y>0.?texture2D(u_wind_middle_center,a-vec2(0.,0.)).rg:a.y>0.?texture2D(u_wind_middle_left,a-vec2(-1.,0.)).rg:a.x>1.?texture2D(u_wind_top_right,a-vec2(1.,-1.)).rg:a.x>0.?texture2D(u_wind_top_center,a-vec2(0.,-1.)).rg:texture2D(u_wind_top_left,a-vec2(-1.,-1.)).rg;}vec2 n(const vec2 d){vec2 a=1./u_wind_res,b=floor(d*u_wind_res)*a,c=fract(d*u_wind_res),f=e(b),g=e(b+vec2(a.x,0)),h=e(b+vec2(0,a.y)),j=e(b+a);return mix(mix(f,g,c.x),mix(h,j,c.x),c.y);}varying vec2 q;uniform float u_alpha;void main(){vec2 f=gl_PointCoord*2.-1.;float a=length(f),g=smoothstep(1.,.5,a),h=smoothstep(1.,.2,a)*.6,j=smoothstep(1.,0.,a)*.2,c=g*.4+h+j;if(c<=5e-3)discard;vec2 p=k(q,u_data_matrix),u=mix(u_wind_min,u_wind_max,n(p));float d=clamp(length(u)/max(1e-6,length(u_wind_max)),0.,1.);vec2 v=vec2(fract(16.*d),floor(16.*d)/16.);vec4 w=texture2D(u_color_ramp,v);float b=c*u_alpha;if(b<3e-3)discard;gl_FragColor=vec4(w.rgb*b,b);}"); };
 
   var trailFade = function (gl) { return createProgram(gl, "precision highp float;const vec3 i=vec3(12.9898,78.233,4375.85453);attribute vec2 a_position;varying vec2 r;void main(){r=a_position*.5+.5,gl_Position=vec4(a_position,0.,1.);}", "precision highp float;const vec3 i=vec3(12.9898,78.233,4375.85453);uniform sampler2D u_texture;uniform float u_fade,u_bias,u_cutoff;varying vec2 r;void main(){vec4 a=texture2D(u_texture,r);float b=a.a*u_fade-u_bias;b=floor(b*1000.)/1000.,a.a=max(0.,b),a.rgb*=u_fade;if(a.a<u_cutoff)discard;if(a.a<.01)a.a=0.,a.rgb=vec3(0.);gl_FragColor=a;}"); };
 
@@ -6453,8 +6453,12 @@
 
     Particles.prototype.setupTrailRendering = function setupTrailRendering (gl) {
       var canvas = gl.canvas;
-      var width = Math.max(1, canvas.width);
-      var height = Math.max(1, canvas.height);
+      // Use higher resolution for trails at high zoom to reduce pixelation
+      var currentZoom = this.map && this.map.getZoom ? this.map.getZoom() : 0;
+      var resolutionScale = Math.max(1.0, Math.min(2.0, currentZoom / 8.0)); // 1x to 2x based on zoom
+      
+      var width = Math.max(1, Math.floor(canvas.width * resolutionScale));
+      var height = Math.max(1, Math.floor(canvas.height * resolutionScale));
 
       // cleanup old
       if (this.trailTexture) {
@@ -6467,8 +6471,9 @@
       function mkTex() {
         var tex = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, tex);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        // Use LINEAR filtering to smooth out pixelation
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.texImage2D(
@@ -6513,6 +6518,7 @@
 
       this._trailWidth = width;
       this._trailHeight = height;
+      this._trailResolutionScale = resolutionScale;
       this._trailReadyFrames = 0;
     };
 
@@ -6552,32 +6558,32 @@
 
       // Get current zoom for trail adjustments
       var currentZoom = this.map && this.map.getZoom ? this.map.getZoom() : 0;
-      var zoomFactor = Math.max(0.5, Math.min(2.0, currentZoom / 10.0)); // 0.5 to 2.0 based on zoom
+      var zoomFactor = Math.max(0.5, Math.min(2.0, currentZoom / 10.0));
 
       // --- compute dt for time-based fade ---
       var now = typeof performance !== "undefined" && performance.now ? performance.now() : Date.now();
       var dt = 16.7;
       if (this._fadePrevTime != null) { dt = now - this._fadePrevTime; }
       this._fadePrevTime = now;
-      dt = Math.max(0.0, Math.min(200.0, dt)) / 1000.0; // clamp to [0..0.2] s
+      dt = Math.max(0.0, Math.min(200.0, dt)) / 1000.0;
 
-      // Zoom-dependent fade parameters - longer trails at higher zoom
-      var trailSetting = this.particleTrail || 0.3; // 0..1
+      // Keep existing fade parameters
+      var trailSetting = this.particleTrail || 0.3;
       var baseTau = 0.4 + 0.6 * trailSetting;
-      var tau = baseTau * (0.5 + 1.5 * zoomFactor);  // Longer trails at higher zoom (0.5x to 2x)
-      var biasPerSec = (0.08 + 0.05 * (1.0 - trailSetting)) / zoomFactor; // Less aggressive bias at higher zoom
+      var tau = baseTau * (0.5 + 1.5 * zoomFactor);
+      var biasPerSec = (0.08 + 0.05 * (1.0 - trailSetting)) / zoomFactor;
       var fadeFactor = Math.exp(-dt / Math.max(1e-4, tau));
       var biasDt = biasPerSec * dt;
-      var cutoff = Math.max(0.015, 0.035 / zoomFactor); // Lower cutoff at higher zoom for longer trails
+      var cutoff = Math.max(0.015, 0.035 / zoomFactor);
 
-      // A) Clear temp buffer first to ensure no accumulation
+      // A) Clear temp buffer first
       gl.disable(gl.BLEND);
       gl.bindFramebuffer(gl.FRAMEBUFFER, this.tempTrailFramebuffer);
       gl.viewport(0, 0, this._trailWidth, this._trailHeight);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
 
-      // B) Fade old trails into temp FBO (no blending)
+      // B) Fade old trails into temp FBO
       gl.useProgram(this.fadeProgram.program);
       bindTexture(gl, this.trailTexture, 0);
       bindAttribute(gl, this.fadeQuadBuffer, this.fadeProgram.a_position, 2);
@@ -6592,9 +6598,9 @@
       gl.blendFuncSeparate(gl.ONE, gl.ONE, gl.ONE, gl.ONE);
       gl.useProgram(this.drawProgram.program);
 
-      // Zoom-dependent stamp intensity - more opaque trails at higher zoom
-      var baseStampAlpha = 0.03 + 0.05 * trailSetting;
-      var stampAlpha = baseStampAlpha * (0.7 + 0.8 * zoomFactor); // 0.7x to 1.5x based on zoom
+      // Increase stamp intensity to make trails more visible
+      var baseStampAlpha = 0.06 + 0.08 * trailSetting; // Increased from 0.04+0.06 to 0.06+0.08
+      var stampAlpha = baseStampAlpha * (0.8 + 0.7 * zoomFactor);
       gl.uniform1f(this.drawProgram.u_alpha, stampAlpha);
 
       var tiles = this.visibleParticleTiles();
@@ -6614,7 +6620,7 @@
       this.trailFramebuffer = this.tempTrailFramebuffer;
       this.tempTrailFramebuffer = tfbo;
 
-      // E) Composite to screen with premultiplied alpha
+      // E) Composite to screen with proper scaling for high-res trails
       var vp = gl.getParameter(gl.VIEWPORT);
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
       gl.viewport(vp[0], vp[1], vp[2], vp[3]);
@@ -6631,21 +6637,22 @@
       gl.uniform1f(this.fadeProgram.u_cutoff, 0.0);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
 
-      // F) Draw bright heads on top with zoom-dependent alpha
+      // F) Draw particle heads with reduced brightness for smooth transition
       gl.useProgram(this.drawProgram.program);
-      var headAlpha = 0.6 + 0.3 * zoomFactor; // 0.6 to 0.9 based on zoom
+      var headAlpha = 0.25 + 0.15 * zoomFactor; // Reduced from 0.4+0.2 to 0.25+0.15
       gl.uniform1f(this.drawProgram.u_alpha, headAlpha);
 
       for (var j = 0; j < tiles.length; j++) {
         var tile2 = tiles[j];
         var found2 = this.findAssociatedDataTiles(tile2);
         if (!found2) { continue; }
-        this._drawPoints(gl, matrix, this._particleTiles[tile2], tile2.viewMatrix(2), found2, 1.0 + 0.3 * zoomFactor); // Larger heads at higher zoom
+        // Smaller size boost for more subtle head appearance
+        this._drawPoints(gl, matrix, this._particleTiles[tile2], tile2.viewMatrix(2), found2, 1.0 + 0.1 * zoomFactor);
       }
 
-      // Less frequent periodic clearing at higher zooms (longer trails need less clearing)
+      // Periodic clearing with zoom adjustment
       this._frameCount = (this._frameCount || 0) + 1;
-      var clearInterval = Math.floor(300 + 200 * zoomFactor); // 300-500 frames based on zoom
+      var clearInterval = Math.floor(300 + 200 * zoomFactor);
       if (this._frameCount % clearInterval === 0) {
         this._clearTrails();
       }
@@ -6688,10 +6695,14 @@
       gl.uniformMatrix4fv(this.drawProgram.u_matrix, false, matrix);
       gl.uniformMatrix4fv(this.drawProgram.u_offset, false, offset);
 
-      // Particle head size scales with zoom
+      // Calculate smaller particle size to match trail width
       var currentZoom = this.map && this.map.getZoom ? this.map.getZoom() : 0;
-      var zoomScale = Math.max(1.0, Math.min(3.0, Math.pow(2, currentZoom - 2)));
-      var sizePx = Math.max(1.0, this.particleSize * zoomScale * sizeBoost);
+      var baseTrailWidth = 1.5; // Reduced from 2.0 to 1.5 for smaller particles
+      var zoomScale = Math.max(0.8, Math.min(3.0, Math.pow(2, (currentZoom - 2) * 0.4))); // Reduced scale factor
+      var trailWidthPx = baseTrailWidth * zoomScale;
+      
+      // Match particle size to trail width, then apply size boost
+      var sizePx = Math.max(0.8, trailWidthPx * this.particleSize * sizeBoost); // Reduced minimum size
       gl.uniform1f(this.drawProgram.u_particle_size, sizePx);
 
       gl.uniform2f(this.drawProgram.u_wind_min, this.windData.uMin, this.windData.vMin);

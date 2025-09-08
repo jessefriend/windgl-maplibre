@@ -147,13 +147,19 @@ export void particleDrawVertex() {
 }
 
 export void particleDrawFragment() {
-  // Create smooth circular particle heads
+  // Create very smooth particle that blends seamlessly with trails
   vec2 pc = gl_PointCoord * 2.0 - 1.0;   // [-1,1]
   float r = length(pc);
   
-  // Smooth circular falloff with softer edges
-  float m = smoothstep(1.0, 0.85, r);    // Softer edge transition
-  if (m <= 0.0) discard;
+  // Much softer falloff for better trail blending
+  float innerCore = smoothstep(1.0, 0.5, r);      // Small bright center
+  float midGlow = smoothstep(1.0, 0.2, r) * 0.6;  // Medium glow
+  float outerSoft = smoothstep(1.0, 0.0, r) * 0.2; // Very soft outer edge
+  
+  // Combine for very gradual falloff that matches trail intensity
+  float mask = innerCore * 0.4 + midGlow + outerSoft;
+  
+  if (mask <= 0.005) discard;
 
   // color ramp by local wind speed
   vec2 wind_uv = transform(v_particle_pos, u_data_matrix);
@@ -164,11 +170,9 @@ export void particleDrawFragment() {
   vec2 ramp_pos = vec2(fract(16.0 * speed_t), floor(16.0 * speed_t) / 16.0);
   vec4 color    = texture2D(u_color_ramp, ramp_pos);
 
-  // Add subtle glow effect for better visibility
-  float glow = smoothstep(1.0, 0.6, r) * 0.3;
-  float totalAlpha = (m + glow) * u_alpha;
+  float totalAlpha = mask * u_alpha;
   
-  if (totalAlpha < 0.01) discard;
+  if (totalAlpha < 0.003) discard;
 
   // premultiplied alpha output
   gl_FragColor = vec4(color.rgb * totalAlpha, totalAlpha);
