@@ -50,8 +50,6 @@ var configs = [
       {
         type: "particles",
         after: null,
-        trailMode: "loop",          // 'loop' | 'oneshot' | 'continuous' (default)
-        trailDurationMs: 5000, 
         properties: {
           "particle-speed": 0.75,
           "particle-size": 2.0,
@@ -129,7 +127,7 @@ function firstSymbolLayerId(map) {
 }
 
 function initializeConfig(container, cfg) {
-  var map = new maplibregl.Map({ container: container, style: cfg.style });
+  var map = new maplibregl.Map({ container: container, style: cfg.style, hash: true });
   map.on("load", function () {
     var beforeId = firstSymbolLayerId(map);
     // var source = windGL.source("wind/2025011206/tile.json");

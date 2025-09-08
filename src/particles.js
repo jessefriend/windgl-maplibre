@@ -224,9 +224,18 @@ class Particles extends Layer {
 
   setupTrailRendering(gl) {
     const canvas = gl.canvas;
-    // Use higher resolution for trails at high zoom to reduce pixelation
+    // Much more aggressive resolution scaling for high zooms
     const currentZoom = this.map && this.map.getZoom ? this.map.getZoom() : 0;
-    const resolutionScale = Math.max(1.0, Math.min(2.0, currentZoom / 8.0)); // 1x to 2x based on zoom
+    
+    // Enhanced scaling curve - goes up to 6x at very high zooms
+    let resolutionScale;
+    if (currentZoom <= 6) {
+      resolutionScale = Math.max(1.0, 1.0 + (currentZoom / 6.0)); // 1x to 2x
+    } else if (currentZoom <= 12) {
+      resolutionScale = 2.0 + ((currentZoom - 6) / 6.0) * 2.0; // 2x to 4x
+    } else {
+      resolutionScale = 4.0 + Math.min(2.0, (currentZoom - 12) / 4.0 * 2.0); // 4x to 6x
+    }
     
     const width = Math.max(1, Math.floor(canvas.width * resolutionScale));
     const height = Math.max(1, Math.floor(canvas.height * resolutionScale));
@@ -466,14 +475,21 @@ class Particles extends Layer {
     gl.uniformMatrix4fv(this.drawProgram.u_matrix, false, matrix);
     gl.uniformMatrix4fv(this.drawProgram.u_offset, false, offset);
 
-    // Calculate smaller particle size to match trail width
+    // Enhanced particle sizing that accounts for high-res trail buffers
     const currentZoom = this.map && this.map.getZoom ? this.map.getZoom() : 0;
-    const baseTrailWidth = 1.5; // Reduced from 2.0 to 1.5 for smaller particles
-    const zoomScale = Math.max(0.8, Math.min(3.0, Math.pow(2, (currentZoom - 2) * 0.4))); // Reduced scale factor
-    const trailWidthPx = baseTrailWidth * zoomScale;
+    const baseTrailWidth = 1.0; // Slightly smaller base for better proportions
+    
+    // More sophisticated zoom scaling
+    const zoomScale = Math.max(1.0, Math.pow(1.6, (currentZoom - 3) * 0.4)); // Exponential growth
+    
+    // Account for trail buffer resolution - particles need to be larger in high-res buffers
+    const resolutionScale = this._trailResolutionScale || 1.0;
+    const resolutionCompensation = Math.sqrt(resolutionScale); // Square root scaling for better visual balance
+    
+    const trailWidthPx = baseTrailWidth * zoomScale * resolutionCompensation;
     
     // Match particle size to trail width, then apply size boost
-    const sizePx = Math.max(0.8, trailWidthPx * this.particleSize * sizeBoost); // Reduced minimum size
+    const sizePx = Math.max(1.0, trailWidthPx * this.particleSize * sizeBoost);
     gl.uniform1f(this.drawProgram.u_particle_size, sizePx);
 
     gl.uniform2f(this.drawProgram.u_wind_min, this.windData.uMin, this.windData.vMin);
