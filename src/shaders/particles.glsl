@@ -175,6 +175,6 @@ export void particleDrawFragment() {
     float mask = smoothstep(1.0, 0.8, r2);
 
     // Ensure minimum visibility and proper alpha blending
-    float finalAlpha = max(0.1, color.a * u_trail_alpha * mask);
+    float finalAlpha = color.a * u_trail_alpha * mask;
     gl_FragColor = vec4(color.rgb * finalAlpha, finalAlpha); // Premultiplied alpha
 }

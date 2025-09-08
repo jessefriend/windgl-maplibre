@@ -452,7 +452,7 @@ class Particles extends Layer {
     util.bindAttribute(gl, this.fadeQuadBuffer, this.fadeProgram.a_position, 2);
 
     const trailSetting = this.particleTrail || 0.3;
-    const fade = Math.min(0.99, Math.max(0.94, 1.0 - 0.1 * trailSetting));
+    const fade = Math.min(0.97, Math.max(0.90, 1.0 - 0.16 * trailSetting));
     gl.uniform1i(this.fadeProgram.u_texture, 0);
     gl.uniform1f(this.fadeProgram.u_fade, fade);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
