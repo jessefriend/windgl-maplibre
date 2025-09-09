@@ -15,7 +15,7 @@ var configs = [
   {
     style: STYLE,
     layers: [
-      { type: "sampleFill", after: null },
+      // { type: "sampleFill", after: null },
       { type: "particles", after: null }
     ],
     flyTo: { zoom: 2 }
@@ -55,6 +55,7 @@ var configs = [
           "particle-size": 2.0,
           "particle-trail": 0.3,
           "trail-substeps": 8,
+          "number-particles": 5000,
           "particle-color": [
             "interpolate", ["linear"], ["get", "speed"],
             0,   "#3288bd",

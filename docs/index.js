@@ -6276,6 +6276,14 @@
             expression: { interpolated: true, parameters: ["zoom"] },
             "property-type": "data-constant",
           },
+          "number-particles": {
+            type: "number",
+            minimum: 1000,
+            maximum: 100000,
+            default: 10000,
+            expression: { interpolated: false, parameters: [] },
+            "property-type": "data-constant",    
+          },
         },
         options
       );
@@ -6284,8 +6292,7 @@
       this.tileSize = 1024;
 
       this.dropRate = 0.003;
-      this.dropRateBump = 0.01;
-      this._numParticles = 1500;
+      this.dropRateBump = 0.01;    
 
       this._particleTiles = {};
 
@@ -6358,7 +6365,7 @@
       }
     };
 
-    Particles.prototype.initializeParticles = function initializeParticles (gl, count) {
+    Particles.prototype.initializeParticles = function initializeParticles (gl, count) {    
       var particleRes = (this.particleStateResolution = Math.ceil(Math.sqrt(count)));
       this._numParticles = particleRes * particleRes;
 
@@ -6374,12 +6381,14 @@
 
     Particles.prototype.initialize = function initialize (map, gl) {
       var this$1$1 = this;
-
+   
       this.updateProgram = particleUpdate(gl);
       this.drawProgram = particleDraw(gl);
       this.fadeProgram = trailFade(gl);
 
       this.framebuffer = gl.createFramebuffer();
+
+      this._particlesInitialized = false;
 
       // Quad for particle update pass
       this.quadBuffer = createBuffer(
@@ -6392,8 +6401,6 @@
         gl,
         new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1])
       );
-
-      this.initializeParticles(gl, this._numParticles);
 
       this.nullTexture = createTexture(gl, gl.NEAREST, new Uint8Array([0, 0, 0, 0]), 1, 1);
       this.nullTile = { getTexture: function () { return this$1$1.nullTexture; } };
@@ -6535,6 +6542,13 @@
     Particles.prototype.prerender = function prerender (gl) {
       if (!this.windData) { return; }
 
+      // Initialize particles on first prerender when properties are available
+      if (!this._particlesInitialized) {
+        var numParticles = this.numberParticles;
+        this.initializeParticles(gl, numParticles);
+        this._particlesInitialized = true;
+      }
+
       gl.disable(gl.BLEND);
 
       var tiles = this.visibleParticleTiles();
@@ -6562,7 +6576,7 @@
       this.renderWithTrails(gl, matrix);
     };
 
-    Particles.prototype.renderWithTrails = function renderWithTrails (gl, matrix) {
+    Particles.prototype.renderWithTrails = function renderWithTrails (gl, matrix) {    
       if (!this.trailFramebuffer) { return; }
 
       // Get current zoom for trail adjustments
@@ -6727,8 +6741,10 @@
 
       var vp = gl.getParameter(gl.VIEWPORT);
       gl.uniform2f(this.drawProgram.u_viewport, vp[2], vp[3]);
+      
+      var numParticles = this.numberParticles || this._numParticles;  
 
-      gl.drawArrays(gl.POINTS, 0, this._numParticles);
+      gl.drawArrays(gl.POINTS, 0, numParticles);
     };
 
     Particles.prototype.update = function update (gl, tile, data) {
@@ -7154,7 +7170,7 @@
     {
       style: STYLE,
       layers: [
-        { type: "sampleFill", after: null },
+        // { type: "sampleFill", after: null },
         { type: "particles", after: null }
       ],
       flyTo: { zoom: 2 }
@@ -7194,6 +7210,7 @@
             "particle-size": 2.0,
             "particle-trail": 0.3,
             "trail-substeps": 8,
+            "number-particles": 5000,
             "particle-color": [
               "interpolate", ["linear"], ["get", "speed"],
               0,   "#3288bd",

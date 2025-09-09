@@ -53,6 +53,14 @@ class Particles extends Layer {
           expression: { interpolated: true, parameters: ["zoom"] },
           "property-type": "data-constant",
         },
+        "number-particles": {
+          type: "number",
+          minimum: 1000,
+          maximum: 100000,
+          default: 10000,
+          expression: { interpolated: false, parameters: [] },
+          "property-type": "data-constant",    
+        },
       },
       options
     );
@@ -61,8 +69,7 @@ class Particles extends Layer {
     this.tileSize = 1024;
 
     this.dropRate = 0.003;
-    this.dropRateBump = 0.01;
-    this._numParticles = 1500;
+    this.dropRateBump = 0.01;    
 
     this._particleTiles = {};
 
@@ -131,7 +138,7 @@ class Particles extends Layer {
     }
   }
 
-  initializeParticles(gl, count) {
+  initializeParticles(gl, count) {    
     const particleRes = (this.particleStateResolution = Math.ceil(Math.sqrt(count)));
     this._numParticles = particleRes * particleRes;
 
@@ -145,12 +152,14 @@ class Particles extends Layer {
     this.particleIndexBuffer = util.createBuffer(gl, particleIndices);
   }
 
-  initialize(map, gl) {
+  initialize(map, gl) { 
     this.updateProgram = particleUpdate(gl);
     this.drawProgram = particleDraw(gl);
     this.fadeProgram = trailFade(gl);
 
     this.framebuffer = gl.createFramebuffer();
+
+    this._particlesInitialized = false;
 
     // Quad for particle update pass
     this.quadBuffer = util.createBuffer(
@@ -163,8 +172,6 @@ class Particles extends Layer {
       gl,
       new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1])
     );
-
-    this.initializeParticles(gl, this._numParticles);
 
     this.nullTexture = util.createTexture(gl, gl.NEAREST, new Uint8Array([0, 0, 0, 0]), 1, 1);
     this.nullTile = { getTexture: () => this.nullTexture };
@@ -306,6 +313,13 @@ class Particles extends Layer {
   prerender(gl) {
     if (!this.windData) return;
 
+    // Initialize particles on first prerender when properties are available
+    if (!this._particlesInitialized) {
+      const numParticles = this.numberParticles;
+      this.initializeParticles(gl, numParticles);
+      this._particlesInitialized = true;
+    }
+
     gl.disable(gl.BLEND);
 
     const tiles = this.visibleParticleTiles();
@@ -333,7 +347,7 @@ class Particles extends Layer {
     this.renderWithTrails(gl, matrix);
   }
 
-  renderWithTrails(gl, matrix) {
+  renderWithTrails(gl, matrix) {    
     if (!this.trailFramebuffer) return;
 
     // Get current zoom for trail adjustments
@@ -498,8 +512,10 @@ class Particles extends Layer {
 
     const vp = gl.getParameter(gl.VIEWPORT);
     gl.uniform2f(this.drawProgram.u_viewport, vp[2], vp[3]);
+    
+    const numParticles = this.numberParticles || this._numParticles;  
 
-    gl.drawArrays(gl.POINTS, 0, this._numParticles);
+    gl.drawArrays(gl.POINTS, 0, numParticles);
   }
 
   update(gl, tile, data) {
