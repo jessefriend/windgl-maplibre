@@ -190,6 +190,65 @@ var tile = function (z, x, y, wrap) {
 var tileID = tile;
 
 /**
+ * MapLibre >= 5 calls `render`/`prerender` with an options object where older
+ * versions passed the mercator matrix directly. Accept either.
+ *
+ * `defaultProjectionData.mainMatrix` is the successor of the old matrix: it maps
+ * mercator 0..1 to clip space. (`modelViewProjectionMatrix` is *not* — it expects
+ * world pixel coordinates.) Under mercator it is a Float64Array, which WebGL
+ * refuses, hence the copy.
+ */
+function customLayerMatrix(args) {
+  if (args && args.defaultProjectionData) {
+    return new Float32Array(args.defaultProjectionData.mainMatrix);
+  }
+  return args;
+}
+
+/**
+ * Our shaders project mercator coordinates themselves, so they only line up with
+ * MapLibre's mercator projection. Under globe we would smear a flat sheet across
+ * the sphere, so the layers skip rendering instead. Supporting globe means
+ * switching to MapLibre's `shaderData.vertexShaderPrelude` + `projectTile()`,
+ * which requires GLSL ES 3.00 shaders.
+ */
+function isUnsupportedProjection(args) {
+  return !!(
+    args &&
+    args.shaderData &&
+    args.shaderData.variantName &&
+    args.shaderData.variantName !== "mercator"
+  );
+}
+
+/**
+ * `@maplibre/maplibre-gl-style-spec` 26 inserted a `rootKey` argument between the
+ * value and the property spec. Probe once with an expression that only parses
+ * when the spec is honoured, so we work against both shapes (a consuming app may
+ * dedupe us onto whichever copy its MapLibre version ships).
+ */
+var styleSpecNeedsRootKey = (function () {
+  var spec = {
+    type: "color",
+    default: "#000000",
+    expression: { interpolated: true, parameters: ["zoom"] },
+    "property-type": "data-constant"
+  };
+  var probe = ["interpolate", ["linear"], ["zoom"], 0, "#000000", 1, "#ffffff"];
+  try {
+    return maplibreGlStyleSpec.expression.createPropertyExpression(probe, spec).result !== "success";
+  } catch (e) {
+    return true;
+  }
+})();
+
+function createPropertyExpression(prop, value, spec) {
+  return styleSpecNeedsRootKey
+    ? maplibreGlStyleSpec.expression.createPropertyExpression(value, prop, spec)
+    : maplibreGlStyleSpec.expression.createPropertyExpression(value, spec);
+}
+
+/**
  * Abstract base class handling MapLibre/Mapbox custom-layer plumbing
  * and common bookkeeping.
  */
@@ -235,7 +294,7 @@ var Layer = function Layer(propertySpec, opts) {
 Layer.prototype.setProperty = function setProperty (prop, value) {
   var spec = this.propertySpec[prop];
   if (!spec) { return; }
-  var expr = maplibreGlStyleSpec.expression.createPropertyExpression(value, spec);
+  var expr = createPropertyExpression(prop, value, spec);
   if (expr.result === "success") {
     switch (expr.value.kind) {
       case "camera":
@@ -285,7 +344,7 @@ Layer.prototype.buildColorRamp = function buildColorRamp (expr) {
     var color = expr.evaluate(
       expr.kind === "constant" || expr.kind === "source"
         ? {}
-        : { zoom: this.map.zoom },
+        : { zoom: this.map.getZoom() },
       { properties: { speed: (i / 255) * range } }
     );
     colors[i * 4 + 0] = color.r * 255;
@@ -379,6 +438,10 @@ Layer.prototype._initialize = function _initialize () {
   this._onMove = this.move.bind(this);
   this.map.on("zoom", this._onZoom);
   this.map.on("move", this._onMove);
+
+  // Tiles are requested from `move`, so without this the layer renders nothing
+  // until the user first pans or zooms.
+  this.move();
 };
 
 // Update zoom-dependent properties
@@ -413,6 +476,19 @@ Layer.prototype.move = function move () {
   });
 };
 
+// Returns true (and complains once) if the map is using a projection we can't draw in.
+Layer.prototype.warnOnUnsupportedProjection = function warnOnUnsupportedProjection (args) {
+  if (!isUnsupportedProjection(args)) { return false; }
+  if (!this._warnedProjection) {
+    this._warnedProjection = true;
+    console.warn(
+      "windgl: layer \"" + (this.id) + "\" only supports the mercator projection, " +
+        "not \"" + (args.shaderData.variantName) + "\". The layer will not be drawn."
+    );
+  }
+  return true;
+};
+
 // Called when the map is destroyed or the GL context is lost.
 Layer.prototype.onRemove = function onRemove (map) {
   if (this._onZoom) { map.off("zoom", this._onZoom); }
@@ -424,10 +500,12 @@ Layer.prototype.onRemove = function onRemove (map) {
 };
 
 // called by MapLibre/Mapbox each frame
-Layer.prototype.render = function render (gl, matrix) {
+Layer.prototype.render = function render (gl, args) {
     var this$1$1 = this;
 
   if (!this.windData) { return; }
+  if (this.warnOnUnsupportedProjection(args)) { return; }
+  var matrix = customLayerMatrix(args);
   this.computeVisibleTiles(
     this.pixelToGridRatio,
     Math.min(this.windData.width, this.windData.height),
@@ -596,6 +674,18 @@ var Particles = /*@__PURE__*/(function (Layer) {
             parameters: ["zoom"]
           },
           "property-type": "data-constant"
+        },
+        "number-particles": {
+          type: "number",
+          minimum: 1,
+          default: 65536,
+          // Deliberately not zoom-dependent: changing the count reallocates the
+          // index buffer and every particle state texture.
+          expression: {
+            interpolated: false,
+            parameters: []
+          },
+          "property-type": "data-constant"
         }
       },
       options
@@ -606,6 +696,8 @@ var Particles = /*@__PURE__*/(function (Layer) {
     this.dropRate = 0.003; // how often the particles move to a random place
     this.dropRateBump = 0.01; // drop rate increase relative to individual particle speed
     this._numParticles = 65536;
+    // The requested count, before it is rounded up to a square texture.
+    this._requestedParticles = 65536;
     // This layer manages 2 kinds of tiles: data tiles (the same as other layers) and particle state tiles
     this._particleTiles = {};
   }
@@ -623,6 +715,30 @@ var Particles = /*@__PURE__*/(function (Layer) {
 
   Particles.prototype.setParticleColor = function setParticleColor (expr) {
     this.buildColorRamp(expr);
+  };
+
+  // Changing the count invalidates the index buffer and every particle state
+  // texture, since those are sized from the resolution.
+  Particles.prototype.setNumberParticles = function setNumberParticles (expr) {
+    var count = Math.max(1, Math.round(expr.evaluate({})));
+    if (count === this._requestedParticles) { return; }
+    this._requestedParticles = count;
+    if (!this.gl) { return; } // initialize() will pick it up
+    this.initializeParticles(this.gl, count);
+    this.dropParticleTiles();
+    this.move();
+    this.map.triggerRepaint();
+  };
+
+  Particles.prototype.dropParticleTiles = function dropParticleTiles () {
+    var this$1$1 = this;
+
+    Object.keys(this._particleTiles).forEach(function (key) {
+      var state = this$1$1._particleTiles[key];
+      this$1$1.gl.deleteTexture(state.particleStateTexture0);
+      this$1$1.gl.deleteTexture(state.particleStateTexture1);
+      delete this$1$1._particleTiles[key];
+    });
   };
 
   Particles.prototype.initializeParticleTile = function initializeParticleTile () {
@@ -651,9 +767,10 @@ var Particles = /*@__PURE__*/(function (Layer) {
     var tiles = this.visibleParticleTiles();
     Object.keys(this._particleTiles).forEach(function (tile) {
       if (tiles.filter(function (t) { return t.toString() == tile; }).length === 0) {
-        // cleanup
-        this$1$1.gl.deleteTexture(tile.particleStateTexture0);
-        this$1$1.gl.deleteTexture(tile.particleStateTexture1);
+        // cleanup - note `tile` is the string key, the state lives in the value
+        var state = this$1$1._particleTiles[tile];
+        this$1$1.gl.deleteTexture(state.particleStateTexture0);
+        this$1$1.gl.deleteTexture(state.particleStateTexture1);
         delete this$1$1._particleTiles[tile];
       }
     });
@@ -677,6 +794,7 @@ var Particles = /*@__PURE__*/(function (Layer) {
 
     var particleIndices = new Float32Array(this._numParticles);
     for (var i$1 = 0; i$1 < this._numParticles; i$1++) { particleIndices[i$1] = i$1; }
+    if (this.particleIndexBuffer) { gl.deleteBuffer(this.particleIndexBuffer); }
     this.particleIndexBuffer = createBuffer(gl, particleIndices);
   };
 
@@ -693,7 +811,7 @@ var Particles = /*@__PURE__*/(function (Layer) {
       new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1])
     );
 
-    this.initializeParticles(gl, this._numParticles);
+    this.initializeParticles(gl, this._requestedParticles);
 
     this.nullTexture = createTexture(
       gl,
@@ -709,10 +827,11 @@ var Particles = /*@__PURE__*/(function (Layer) {
   };
 
   // This is a callback from mapbox for rendering into a texture
-  Particles.prototype.prerender = function prerender (gl) {
+  Particles.prototype.prerender = function prerender (gl, args) {
     var this$1$1 = this;
 
     if (this.windData) {
+      if (isUnsupportedProjection(args)) { return; }
       var blendingEnabled = gl.isEnabled(gl.BLEND);
       gl.disable(gl.BLEND);
       var tiles = this.visibleParticleTiles();
@@ -775,8 +894,11 @@ var Particles = /*@__PURE__*/(function (Layer) {
     var t = tileID;
     var found;
     var matrix = new DOMMatrix();
-    while (!t.isRoot()) {
+    // Walk up towards the root looking for a loaded data tile. The root itself
+    // has to be tested too, otherwise nothing ever renders at low zooms.
+    for (;;) {
       if ((found = this._tiles[t])) { break; }
+      if (t.isRoot()) { break; }
       var ref = t.quadrant();
       var x = ref[0];
       var y = ref[1];
@@ -883,10 +1005,12 @@ var Particles = /*@__PURE__*/(function (Layer) {
     tile.particleStateTexture1 = temp;
   };
 
-  Particles.prototype.render = function render (gl, matrix) {
+  Particles.prototype.render = function render (gl, args) {
     var this$1$1 = this;
 
     if (this.windData) {
+      if (this.warnOnUnsupportedProjection(args)) { return; }
+      var matrix = customLayerMatrix(args);
       this.visibleParticleTiles().forEach(function (tile) {
         var found = this$1$1.findAssociatedDataTiles(tile);
         if (!found) { return; }

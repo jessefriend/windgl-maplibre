@@ -1,4 +1,5 @@
-import maplibregl from "maplibre-gl";
+// MapLibre 6 is ESM-only and has no default export, so it must be imported as a namespace.
+import * as maplibregl from "maplibre-gl";
 import * as windGL from "./src";
 
 // no access token needed

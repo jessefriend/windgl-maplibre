@@ -3,6 +3,65 @@ import { expression } from "@maplibre/maplibre-gl-style-spec";
 import tileID from "./tileID";
 
 /**
+ * MapLibre >= 5 calls `render`/`prerender` with an options object where older
+ * versions passed the mercator matrix directly. Accept either.
+ *
+ * `defaultProjectionData.mainMatrix` is the successor of the old matrix: it maps
+ * mercator 0..1 to clip space. (`modelViewProjectionMatrix` is *not* — it expects
+ * world pixel coordinates.) Under mercator it is a Float64Array, which WebGL
+ * refuses, hence the copy.
+ */
+export function customLayerMatrix(args) {
+  if (args && args.defaultProjectionData) {
+    return new Float32Array(args.defaultProjectionData.mainMatrix);
+  }
+  return args;
+}
+
+/**
+ * Our shaders project mercator coordinates themselves, so they only line up with
+ * MapLibre's mercator projection. Under globe we would smear a flat sheet across
+ * the sphere, so the layers skip rendering instead. Supporting globe means
+ * switching to MapLibre's `shaderData.vertexShaderPrelude` + `projectTile()`,
+ * which requires GLSL ES 3.00 shaders.
+ */
+export function isUnsupportedProjection(args) {
+  return !!(
+    args &&
+    args.shaderData &&
+    args.shaderData.variantName &&
+    args.shaderData.variantName !== "mercator"
+  );
+}
+
+/**
+ * `@maplibre/maplibre-gl-style-spec` 26 inserted a `rootKey` argument between the
+ * value and the property spec. Probe once with an expression that only parses
+ * when the spec is honoured, so we work against both shapes (a consuming app may
+ * dedupe us onto whichever copy its MapLibre version ships).
+ */
+const styleSpecNeedsRootKey = (() => {
+  const spec = {
+    type: "color",
+    default: "#000000",
+    expression: { interpolated: true, parameters: ["zoom"] },
+    "property-type": "data-constant"
+  };
+  const probe = ["interpolate", ["linear"], ["zoom"], 0, "#000000", 1, "#ffffff"];
+  try {
+    return expression.createPropertyExpression(probe, spec).result !== "success";
+  } catch (e) {
+    return true;
+  }
+})();
+
+function createPropertyExpression(prop, value, spec) {
+  return styleSpecNeedsRootKey
+    ? expression.createPropertyExpression(value, prop, spec)
+    : expression.createPropertyExpression(value, spec);
+}
+
+/**
  * Abstract base class handling MapLibre/Mapbox custom-layer plumbing
  * and common bookkeeping.
  */
@@ -47,7 +106,7 @@ export default class Layer {
   setProperty(prop, value) {
     const spec = this.propertySpec[prop];
     if (!spec) return;
-    const expr = expression.createPropertyExpression(value, spec);
+    const expr = createPropertyExpression(prop, value, spec);
     if (expr.result === "success") {
       switch (expr.value.kind) {
         case "camera":
@@ -97,7 +156,7 @@ export default class Layer {
       const color = expr.evaluate(
         expr.kind === "constant" || expr.kind === "source"
           ? {}
-          : { zoom: this.map.zoom },
+          : { zoom: this.map.getZoom() },
         { properties: { speed: (i / 255) * range } }
       );
       colors[i * 4 + 0] = color.r * 255;
@@ -183,6 +242,10 @@ export default class Layer {
     this._onMove = this.move.bind(this);
     this.map.on("zoom", this._onZoom);
     this.map.on("move", this._onMove);
+
+    // Tiles are requested from `move`, so without this the layer renders nothing
+    // until the user first pans or zooms.
+    this.move();
   }
 
   // Update zoom-dependent properties
@@ -210,6 +273,19 @@ export default class Layer {
     });
   }
 
+  // Returns true (and complains once) if the map is using a projection we can't draw in.
+  warnOnUnsupportedProjection(args) {
+    if (!isUnsupportedProjection(args)) return false;
+    if (!this._warnedProjection) {
+      this._warnedProjection = true;
+      console.warn(
+        `windgl: layer "${this.id}" only supports the mercator projection, ` +
+          `not "${args.shaderData.variantName}". The layer will not be drawn.`
+      );
+    }
+    return true;
+  }
+
   // Called when the map is destroyed or the GL context is lost.
   onRemove(map) {
     if (this._onZoom) map.off("zoom", this._onZoom);
@@ -221,8 +297,10 @@ export default class Layer {
   }
 
   // called by MapLibre/Mapbox each frame
-  render(gl, matrix) {
+  render(gl, args) {
     if (!this.windData) return;
+    if (this.warnOnUnsupportedProjection(args)) return;
+    const matrix = customLayerMatrix(args);
     this.computeVisibleTiles(
       this.pixelToGridRatio,
       Math.min(this.windData.width, this.windData.height),

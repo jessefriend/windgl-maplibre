@@ -111,6 +111,18 @@ describe("findAssociatedDataTiles", () => {
     );
   });
 
+  test("when the root tile is the data tile, returns appropriate result", () => {
+    layer._tiles[tile(0, 0, 0)] = tile(0, 0, 0);
+
+    const result = layer.findAssociatedDataTiles(tile(0, 0, 0));
+    expect(result).toEqual(
+      expect.objectContaining({
+        matrix: expect.any(Float32Array),
+        tileMiddleCenter: layer._tiles[tile(0, 0, 0)]
+      })
+    );
+  });
+
   test("when only parent tile present, returns appropriate result", () => {
     layer._tiles[tile(3, 1, 1)] = tile(3, 1, 1); // parent
     layer._tiles[tile(3, 2, 1)] = tile(3, 2, 1);

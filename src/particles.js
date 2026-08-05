@@ -1,5 +1,5 @@
 import * as util from "./util";
-import Layer from "./layer";
+import Layer, { customLayerMatrix, isUnsupportedProjection } from "./layer";
 
 import { particleUpdate, particleDraw } from "./shaders/particles.glsl";
 
@@ -50,6 +50,18 @@ class Particles extends Layer {
             parameters: ["zoom"]
           },
           "property-type": "data-constant"
+        },
+        "number-particles": {
+          type: "number",
+          minimum: 1,
+          default: 65536,
+          // Deliberately not zoom-dependent: changing the count reallocates the
+          // index buffer and every particle state texture.
+          expression: {
+            interpolated: false,
+            parameters: []
+          },
+          "property-type": "data-constant"
         }
       },
       options
@@ -60,6 +72,8 @@ class Particles extends Layer {
     this.dropRate = 0.003; // how often the particles move to a random place
     this.dropRateBump = 0.01; // drop rate increase relative to individual particle speed
     this._numParticles = 65536;
+    // The requested count, before it is rounded up to a square texture.
+    this._requestedParticles = 65536;
     // This layer manages 2 kinds of tiles: data tiles (the same as other layers) and particle state tiles
     this._particleTiles = {};
   }
@@ -73,6 +87,28 @@ class Particles extends Layer {
 
   setParticleColor(expr) {
     this.buildColorRamp(expr);
+  }
+
+  // Changing the count invalidates the index buffer and every particle state
+  // texture, since those are sized from the resolution.
+  setNumberParticles(expr) {
+    const count = Math.max(1, Math.round(expr.evaluate({})));
+    if (count === this._requestedParticles) return;
+    this._requestedParticles = count;
+    if (!this.gl) return; // initialize() will pick it up
+    this.initializeParticles(this.gl, count);
+    this.dropParticleTiles();
+    this.move();
+    this.map.triggerRepaint();
+  }
+
+  dropParticleTiles() {
+    Object.keys(this._particleTiles).forEach(key => {
+      const state = this._particleTiles[key];
+      this.gl.deleteTexture(state.particleStateTexture0);
+      this.gl.deleteTexture(state.particleStateTexture1);
+      delete this._particleTiles[key];
+    });
   }
 
   initializeParticleTile() {
@@ -99,9 +135,10 @@ class Particles extends Layer {
     const tiles = this.visibleParticleTiles();
     Object.keys(this._particleTiles).forEach(tile => {
       if (tiles.filter(t => t.toString() == tile).length === 0) {
-        // cleanup
-        this.gl.deleteTexture(tile.particleStateTexture0);
-        this.gl.deleteTexture(tile.particleStateTexture1);
+        // cleanup - note `tile` is the string key, the state lives in the value
+        const state = this._particleTiles[tile];
+        this.gl.deleteTexture(state.particleStateTexture0);
+        this.gl.deleteTexture(state.particleStateTexture1);
         delete this._particleTiles[tile];
       }
     });
@@ -125,6 +162,7 @@ class Particles extends Layer {
 
     const particleIndices = new Float32Array(this._numParticles);
     for (let i = 0; i < this._numParticles; i++) particleIndices[i] = i;
+    if (this.particleIndexBuffer) gl.deleteBuffer(this.particleIndexBuffer);
     this.particleIndexBuffer = util.createBuffer(gl, particleIndices);
   }
 
@@ -139,7 +177,7 @@ class Particles extends Layer {
       new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1])
     );
 
-    this.initializeParticles(gl, this._numParticles);
+    this.initializeParticles(gl, this._requestedParticles);
 
     this.nullTexture = util.createTexture(
       gl,
@@ -155,8 +193,9 @@ class Particles extends Layer {
   }
 
   // This is a callback from mapbox for rendering into a texture
-  prerender(gl) {
+  prerender(gl, args) {
     if (this.windData) {
+      if (isUnsupportedProjection(args)) return;
       const blendingEnabled = gl.isEnabled(gl.BLEND);
       gl.disable(gl.BLEND);
       const tiles = this.visibleParticleTiles();
@@ -215,8 +254,11 @@ class Particles extends Layer {
     let t = tileID;
     let found;
     let matrix = new DOMMatrix();
-    while (!t.isRoot()) {
+    // Walk up towards the root looking for a loaded data tile. The root itself
+    // has to be tested too, otherwise nothing ever renders at low zooms.
+    for (;;) {
       if ((found = this._tiles[t])) break;
+      if (t.isRoot()) break;
       const [x, y] = t.quadrant();
       matrix.translateSelf(0.5 * x, 0.5 * y);
       matrix.scaleSelf(0.5);
@@ -321,8 +363,10 @@ class Particles extends Layer {
     tile.particleStateTexture1 = temp;
   }
 
-  render(gl, matrix) {
+  render(gl, args) {
     if (this.windData) {
+      if (this.warnOnUnsupportedProjection(args)) return;
+      const matrix = customLayerMatrix(args);
       this.visibleParticleTiles().forEach(tile => {
         const found = this.findAssociatedDataTiles(tile);
         if (!found) return;

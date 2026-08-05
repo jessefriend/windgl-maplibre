@@ -3,7 +3,7 @@
 <head>
 <title>WebGL wind simulation</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-</head>
+<link href="https://cdn.jsdelivr.net/npm/maplibre-gl@6.1.0/dist/maplibre-gl.css" rel="stylesheet" />
 <style>
 body { margin: 0; padding: 0; overflow: hidden;}
 .map { display: block; width: 100vw; height: 100vh; position: absolute !important; top: 0;  }
@@ -20,13 +20,20 @@ body { margin: 0; padding: 0; overflow: hidden;}
     margin: auto;
 }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
-<script src="./index.js"></script>
+<!-- MapLibre >= 6 is ESM-only, so the demo bundle is an ES module and the bare
+     "maplibre-gl" specifier is resolved here. -->
+<script type="importmap">
+{
+  "imports": {
+    "maplibre-gl": "https://cdn.jsdelivr.net/npm/maplibre-gl@6.1.0/dist/maplibre-gl.mjs"
+  }
+}
+</script>
+</head>
 <body>
 <div id="map1" class="map"></div>
 <div id="map2" class="map"></div>
 <button id="next">Next Style</button>
-<link href="https://cdn.jsdelivr.net/npm/maplibre-gl@3.6.1/dist/maplibre-gl.css" rel="stylesheet" />
-<script src="index.js"></script>
+<script type="module" src="./index.js"></script>
 </body>
 </html>
