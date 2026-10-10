@@ -382,6 +382,11 @@ Layer.prototype.computeVisibleTiles = function computeVisibleTiles (pixelToGridR
     minzoom
   );
 
+  return this.tilesForZoom(practicalZoom);
+};
+
+// Enumerates the tiles covering the current viewport at a given tile zoom.
+Layer.prototype.tilesForZoom = function tilesForZoom (practicalZoom) {
   var bounds = this.map.getBounds();
   var tileCount = Math.pow( 2, practicalZoom );
 
@@ -623,9 +628,9 @@ var SampleFill = /*@__PURE__*/(function (Layer) {
 
 function sampleFill (options) { return new SampleFill(options); }
 
-var particleUpdate = function (gl) { return createProgram(gl, "precision highp float;attribute vec2 a_pos;varying vec2 h;void main(){h=a_pos,gl_Position=vec4(1.-2.*a_pos,0,1);}const vec3 f=vec3(12.9898,78.233,4375.85453);", "precision highp float;vec2 g(vec2 b,mat4 c){vec4 a=c*vec4(b,1,1);return a.xy/a.w;}uniform sampler2D u_particles,u_wind_top_left,u_wind_top_center,u_wind_top_right,u_wind_middle_left,u_wind_middle_center,u_wind_middle_right,u_wind_bottom_left,u_wind_bottom_center,u_wind_bottom_right;uniform vec2 u_wind_res,u_wind_min,u_wind_max;uniform bool u_initialize;uniform mat4 u_data_matrix;uniform float u_rand_seed,u_speed_factor,u_drop_rate,u_drop_rate_bump;varying vec2 h;const vec3 f=vec3(12.9898,78.233,4375.85453);float i(const vec2 b){float a=dot(f.xy,b);return fract(sin(a)*(f.z+a));}vec2 d(const vec2 a){return a.x>1.&&a.y>1.?texture2D(u_wind_bottom_right,a-vec2(1,1)).rg:a.x>0.&&a.y>1.?texture2D(u_wind_bottom_center,a-vec2(0,1)).rg:a.y>1.?texture2D(u_wind_bottom_left,a-vec2(-1,1)).rg:a.x>1.&&a.y>0.?texture2D(u_wind_middle_right,a-vec2(1,0)).rg:a.x>0.&&a.y>0.?texture2D(u_wind_middle_center,a-vec2(0,0)).rg:a.y>0.?texture2D(u_wind_middle_left,a-vec2(-1,0)).rg:a.x>1.?texture2D(u_wind_top_right,a-vec2(1,-1)).rg:a.x>0.?texture2D(u_wind_top_center,a-vec2(0,-1)).rg:texture2D(u_wind_top_left,a-vec2(-1,-1)).rg;}vec2 p(const vec2 e){vec2 a=1./u_wind_res,b=floor(e*u_wind_res)*a,c=fract(e*u_wind_res),j=d(b),k=d(b+vec2(a.x,0)),l=d(b+vec2(0,a.y)),m=d(b+a);return mix(mix(j,k,c.x),mix(l,m,c.x),c.y);}vec2 o(vec2 a){vec2 e=g(a,u_data_matrix),b=mix(u_wind_min,u_wind_max,p(e));float j=length(b)/length(u_wind_max);vec2 k=vec2(b.x,-b.y)*1e-4*u_speed_factor;a=fract(1.+a+k);vec2 c=(a+h)*u_rand_seed;float l=u_drop_rate+j*u_drop_rate_bump+smoothstep(.24,.5,length(a-vec2(.5,.5))*.7),m=step(1.-l,i(c));vec2 q=vec2(.5*i(c+1.3)+.25,.5*i(c+2.1)+.25);return mix(a,q,m);}void main(){vec4 b=texture2D(u_particles,h);vec2 a=vec2(b.r/255.+b.b,b.g/255.+b.a);a=o(a);if(u_initialize)for(int c=0;c<100;c++)a=o(a);gl_FragColor=vec4(fract(a*255.),floor(a*255.)/255.);}"); };
+var particleUpdate = function (gl) { return createProgram(gl, "precision highp float;attribute vec2 a_pos;varying vec2 l;void main(){l=a_pos,gl_Position=vec4(1.-2.*a_pos,0,1);}const vec3 j=vec3(12.9898,78.233,4375.85453);", "precision highp float;vec2 k(vec2 b,mat4 c){vec4 a=c*vec4(b,1,1);return a.xy/a.w;}uniform vec2 u_wind_res,u_wind_min,u_wind_max;uniform mat4 u_data_matrix;uniform sampler2D u_particles,u_wind_top_left,u_wind_top_center,u_wind_top_right,u_wind_middle_left,u_wind_middle_center,u_wind_middle_right,u_wind_bottom_left,u_wind_bottom_center,u_wind_bottom_right;uniform bool u_initialize;uniform float u_rand_seed,u_speed_factor,u_drop_rate,u_drop_rate_bump;varying vec2 l;const vec3 j=vec3(12.9898,78.233,4375.85453);float n(const vec2 b){float a=dot(j.xy,b);return fract(sin(a)*(j.z+a));}vec2 e(const vec2 a){return a.x>1.&&a.y>1.?texture2D(u_wind_bottom_right,a-vec2(1,1)).rg:a.x>0.&&a.y>1.?texture2D(u_wind_bottom_center,a-vec2(0,1)).rg:a.y>1.?texture2D(u_wind_bottom_left,a-vec2(-1,1)).rg:a.x>1.&&a.y>0.?texture2D(u_wind_middle_right,a-vec2(1,0)).rg:a.x>0.&&a.y>0.?texture2D(u_wind_middle_center,a-vec2(0,0)).rg:a.y>0.?texture2D(u_wind_middle_left,a-vec2(-1,0)).rg:a.x>1.?texture2D(u_wind_top_right,a-vec2(1,-1)).rg:a.x>0.?texture2D(u_wind_top_center,a-vec2(0,-1)).rg:texture2D(u_wind_top_left,a-vec2(-1,-1)).rg;}vec2 t(const vec2 d){vec2 a=1./u_wind_res,b=floor(d*u_wind_res)*a,c=fract(d*u_wind_res),f=e(b),g=e(b+vec2(a.x,0)),h=e(b+vec2(0,a.y)),i=e(b+a);return mix(mix(f,g,c.x),mix(h,i,c.x),c.y);}vec2 p(vec2 a){vec2 d=k(a,u_data_matrix),b=mix(u_wind_min,u_wind_max,t(d));float f=length(b)/length(u_wind_max);vec2 g=vec2(b.x,-b.y)*1e-4*u_speed_factor;a=fract(1.+a+g);vec2 c=(a+l)*u_rand_seed;float h=u_drop_rate+f*u_drop_rate_bump+smoothstep(.24,.5,length(a-vec2(.5,.5))*.7),i=step(1.-h,n(c));vec2 m=vec2(.5*n(c+1.3)+.25,.5*n(c+2.1)+.25);return mix(a,m,i);}void main(){vec4 b=texture2D(u_particles,l);vec2 a=vec2(b.r/255.+b.b,b.g/255.+b.a);a=p(a);if(u_initialize)for(int c=0;c<100;c++)a=p(a);gl_FragColor=vec4(fract(a*255.),floor(a*255.)/255.);}"); };
 
-var particleDraw = function (gl) { return createProgram(gl, "precision highp float;vec2 r(vec2 b){float a=-180.*b.y+90.;a=(180.-57.29578*log(tan(.785398+a*3.141593/360.)))/360.;return vec2(b.x,a);}vec2 g(vec2 b,mat4 c){vec4 a=c*vec4(b,1,1);return a.xy/a.w;}uniform sampler2D u_particles;uniform mat4 u_matrix,u_offset;uniform float u_particles_res,u_particle_size;const vec3 f=vec3(12.9898,78.233,4375.85453);attribute float a_index;varying vec2 n;void main(){vec4 a=texture2D(u_particles,vec2(fract(a_index/u_particles_res),floor(a_index/u_particles_res)/u_particles_res));vec2 b=vec2(a.r/255.+a.b,a.g/255.+a.a),c=g(b,u_offset),e=r(c);n=b,gl_PointSize=u_particle_size,gl_Position=u_matrix*vec4(e,0,1);}", "precision highp float;vec2 g(vec2 b,mat4 c){vec4 a=c*vec4(b,1,1);return a.xy/a.w;}uniform sampler2D u_wind_top_left,u_wind_top_center,u_wind_top_right,u_wind_middle_left,u_wind_middle_center,u_wind_middle_right,u_wind_bottom_left,u_wind_bottom_center,u_wind_bottom_right,u_color_ramp;uniform vec2 u_wind_min,u_wind_max;uniform mat4 u_data_matrix;const vec3 f=vec3(12.9898,78.233,4375.85453);vec2 d(const vec2 a){return a.x>1.&&a.y>1.?texture2D(u_wind_bottom_right,a-vec2(1,1)).rg:a.x>0.&&a.y>1.?texture2D(u_wind_bottom_center,a-vec2(0,1)).rg:a.y>1.?texture2D(u_wind_bottom_left,a-vec2(-1,1)).rg:a.x>1.&&a.y>0.?texture2D(u_wind_middle_right,a-vec2(1,0)).rg:a.x>0.&&a.y>0.?texture2D(u_wind_middle_center,a-vec2(0,0)).rg:a.y>0.?texture2D(u_wind_middle_left,a-vec2(-1,0)).rg:a.x>1.?texture2D(u_wind_top_right,a-vec2(1,-1)).rg:a.x>0.?texture2D(u_wind_top_center,a-vec2(0,-1)).rg:texture2D(u_wind_top_left,a-vec2(-1,-1)).rg;}varying vec2 n;void main(){vec2 b=mix(u_wind_min,u_wind_max,d(g(n,u_data_matrix)));float a=length(b)/length(u_wind_max);vec2 c=vec2(fract(16.*a),floor(16.*a)/16.);gl_FragColor=texture2D(u_color_ramp,c);}"); };
+var particleDraw = function (gl) { return createProgram(gl, "precision highp float;vec2 u(vec2 b){float a=-180.*b.y+90.;a=(180.-57.29578*log(tan(.785398+a*3.141593/360.)))/360.;return vec2(b.x,a);}vec2 k(vec2 b,mat4 c){vec4 a=c*vec4(b,1,1);return a.xy/a.w;}uniform mat4 u_matrix,u_offset;uniform sampler2D u_particles,u_terrain;uniform bool u_terrain_enabled;uniform vec4 u_terrain_bounds;uniform float u_particles_res,u_particle_size,u_particle_altitude,u_terrain_size;const vec3 j=vec3(12.9898,78.233,4375.85453);attribute float a_index;varying vec2 o;void main(){vec4 b=texture2D(u_particles,vec2(fract(a_index/u_particles_res),floor(a_index/u_particles_res)/u_particles_res));vec2 f=vec2(b.r/255.+b.b,b.g/255.+b.a),g=k(f,u_offset),h=u(g);o=f;float i=u_particle_altitude;if(u_terrain_enabled){vec2 a=(h-u_terrain_bounds.xy)/(u_terrain_bounds.zw-u_terrain_bounds.xy);a.y=1.-a.y;vec2 c=(floor(a*u_terrain_size-.5)+.5)/u_terrain_size,d=vec2(1./u_terrain_size);vec4 m=texture2D(u_terrain,c),q=texture2D(u_terrain,c+vec2(d.x,0.)),r=texture2D(u_terrain,c+vec2(0.,d.y)),s=texture2D(u_terrain,c+d);if(min(min(m.a,q.a),min(r.a,s.a))<.5||a.x<0.||a.x>1.||a.y<0.||a.y>1.){gl_Position=vec4(2.,2.,2.,1.),gl_PointSize=u_particle_size;return;}i+=max(max(m.r,q.r),max(r.r,s.r));}float v=(90.-180.*g.y)*.017453,w=i/(40030228.884*cos(v));gl_PointSize=u_particle_size,gl_Position=u_matrix*vec4(h,w,1);}", "precision highp float;vec2 k(vec2 b,mat4 c){vec4 a=c*vec4(b,1,1);return a.xy/a.w;}uniform vec2 u_wind_min,u_wind_max;uniform mat4 u_data_matrix;uniform sampler2D u_wind_top_left,u_wind_top_center,u_wind_top_right,u_wind_middle_left,u_wind_middle_center,u_wind_middle_right,u_wind_bottom_left,u_wind_bottom_center,u_wind_bottom_right,u_color_ramp;const vec3 j=vec3(12.9898,78.233,4375.85453);vec2 e(const vec2 a){return a.x>1.&&a.y>1.?texture2D(u_wind_bottom_right,a-vec2(1,1)).rg:a.x>0.&&a.y>1.?texture2D(u_wind_bottom_center,a-vec2(0,1)).rg:a.y>1.?texture2D(u_wind_bottom_left,a-vec2(-1,1)).rg:a.x>1.&&a.y>0.?texture2D(u_wind_middle_right,a-vec2(1,0)).rg:a.x>0.&&a.y>0.?texture2D(u_wind_middle_center,a-vec2(0,0)).rg:a.y>0.?texture2D(u_wind_middle_left,a-vec2(-1,0)).rg:a.x>1.?texture2D(u_wind_top_right,a-vec2(1,-1)).rg:a.x>0.?texture2D(u_wind_top_center,a-vec2(0,-1)).rg:texture2D(u_wind_top_left,a-vec2(-1,-1)).rg;}varying vec2 o;void main(){vec2 b=mix(u_wind_min,u_wind_max,e(k(o,u_data_matrix)));float a=length(b)/length(u_wind_max);vec2 c=vec2(fract(16.*a),floor(16.*a)/16.);gl_FragColor=texture2D(u_color_ramp,c);}"); };
 
 /**
  * This layer simulates a particles system where the particles move according
@@ -675,6 +680,16 @@ var Particles = /*@__PURE__*/(function (Layer) {
           },
           "property-type": "data-constant"
         },
+        "particle-altitude": {
+          type: "number",
+          minimum: 0,
+          default: 0,
+          expression: {
+            interpolated: true,
+            parameters: ["zoom"]
+          },
+          "property-type": "data-constant"
+        },
         "number-particles": {
           type: "number",
           minimum: 1,
@@ -691,7 +706,17 @@ var Particles = /*@__PURE__*/(function (Layer) {
       options
     );
     this.pixelToGridRatio = 20;
+    // Opt in at construction: MapLibre chooses the depth mode before render().
+    this.particleTerrain = !!options && options["particle-terrain"] === true;
+    if (this.particleTerrain) { this.renderingMode = "3d"; }
+    this.terrainMapSize = 256;
+    this.terrainBounds = [0, 0, 1, 1];
+    this._terrainRevision = 0;
     this.tileSize = 1024;
+    // Particle tiles may overzoom well past the data: the wind field is
+    // interpolated, and a finer grid is what keeps particles inside the viewport
+    // at high map zooms.
+    this.maxParticleZoom = 20;
 
     this.dropRate = 0.003; // how often the particles move to a random place
     this.dropRateBump = 0.01; // drop rate increase relative to individual particle speed
@@ -706,11 +731,27 @@ var Particles = /*@__PURE__*/(function (Layer) {
   Particles.prototype = Object.create( Layer && Layer.prototype );
   Particles.prototype.constructor = Particles;
 
+  /**
+   * Picks the zoom level for the particle simulation grid, so that one particle
+   * tile covers roughly `tileSize * 2` screen pixels.
+   *
+   * MapLibre's world is `512 * 2^zoom` pixels across, so:
+   *     2^particleZoom = worldPixels / (tileSize * 2)
+   *
+   * This has to track the map zoom, because the simulation works in coordinates
+   * relative to the tile: a tile that is much larger than the viewport both spreads
+   * the particles too thinly to see and makes them appear to move far too fast.
+   * (The original heuristic, `canvas height * zoom`, stops tracking above roughly
+   * zoom 6 and the layer goes blank.)
+   */
+  Particles.prototype.particleTileZoom = function particleTileZoom () {
+    var worldPixels = 512 * Math.pow( 2, this.map.getZoom() );
+    var zoom = Math.log2(worldPixels / (this.tileSize * 2));
+    return Math.max(0, Math.min(this.maxParticleZoom, Math.floor(zoom)));
+  };
+
   Particles.prototype.visibleParticleTiles = function visibleParticleTiles () {
-    return this.computeVisibleTiles(2, this.tileSize, {
-      minzoom: 0,
-      maxzoom: this.windData.maxzoom + 3 // how much overzoom to allow?
-    });
+    return this.tilesForZoom(this.particleTileZoom());
   };
 
   Particles.prototype.setParticleColor = function setParticleColor (expr) {
@@ -737,6 +778,7 @@ var Particles = /*@__PURE__*/(function (Layer) {
       var state = this$1$1._particleTiles[key];
       this$1$1.gl.deleteTexture(state.particleStateTexture0);
       this$1$1.gl.deleteTexture(state.particleStateTexture1);
+      if (state.terrainTexture) { this$1$1.gl.deleteTexture(state.terrainTexture); }
       delete this$1$1._particleTiles[key];
     });
   };
@@ -771,6 +813,7 @@ var Particles = /*@__PURE__*/(function (Layer) {
         var state = this$1$1._particleTiles[tile];
         this$1$1.gl.deleteTexture(state.particleStateTexture0);
         this$1$1.gl.deleteTexture(state.particleStateTexture1);
+        if (state.terrainTexture) { this$1$1.gl.deleteTexture(state.terrainTexture); }
         delete this$1$1._particleTiles[tile];
       }
     });
@@ -824,6 +867,73 @@ var Particles = /*@__PURE__*/(function (Layer) {
     this.nullTile = {
       getTexture: function () { return this$1$1.nullTexture; }
     };
+    this.terrainSupported = this.particleTerrain && !!gl.texStorage2D &&
+      !!gl.getExtension("EXT_color_buffer_float");
+    if (this.particleTerrain) {
+      this._invalidateTerrain = function () { this$1$1._terrainRevision++; };
+      for (var i = 0, list = ["move", "sourcedata", "terrain"]; i < list.length; i += 1) {
+        var event = list[i];
+
+        map.on(event, this._invalidateTerrain);
+      }
+    }
+  };
+
+  Particles.prototype.updateTerrain = function updateTerrain (gl, args, tile, state) {
+    this.terrainActive = this.particleTerrain && !!this.map.getTerrain();
+    this.terrainReady = !this.terrainActive;
+    if (!this.terrainActive) { return; }
+    if (!this.terrainSupported || !args || !args.renderTerrainHeightMap) {
+      if (!this._terrainWarning) {
+        console.warn("windgl: terrain particles require MapLibre 6.13+ and EXT_color_buffer_float; particles are hidden while terrain is enabled.");
+        this._terrainWarning = true;
+      }
+      return;
+    }
+    if (state.terrainRevision === this._terrainRevision) {
+      this.terrainReady = true;
+      return;
+    }
+    if (!state.terrainTexture) {
+      state.terrainTexture = gl.createTexture();
+      bindTexture(gl, state.terrainTexture, 11);
+      gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA32F, this.terrainMapSize, this.terrainMapSize);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    }
+    var offset = tile.viewMatrix(2);
+    var mercatorY = function (y) {
+      var latitude = 90 - 180 * y;
+      var radians = Math.max(-85.051129, Math.min(85.051129, latitude)) * Math.PI / 180;
+      return (1 - Math.log(Math.tan(Math.PI / 4 + radians / 2)) / Math.PI) / 2;
+    };
+    // Local height maps retain mountain detail even when a low camera angle
+    // stretches the viewport bounds far towards the horizon.
+    state.terrainBounds = [
+      offset[12], mercatorY(offset[13]),
+      offset[12] + offset[0], mercatorY(offset[13] + offset[5])
+    ];
+    args.renderTerrainHeightMap({
+      texture: state.terrainTexture, width: this.terrainMapSize,
+      height: this.terrainMapSize, bounds: state.terrainBounds
+    });
+    state.terrainRevision = this._terrainRevision;
+    this.terrainReady = true;
+  };
+
+  Particles.prototype.onRemove = function onRemove (map) {
+    if (this._invalidateTerrain) {
+      for (var i = 0, list = ["move", "sourcedata", "terrain"]; i < list.length; i += 1) {
+        var event = list[i];
+
+        map.off(event, this._invalidateTerrain);
+      }
+      delete this._invalidateTerrain;
+    }
+    if (this.gl) { this.dropParticleTiles(); }
+    Layer.prototype.onRemove.call(this, map);
   };
 
   // This is a callback from mapbox for rendering into a texture
@@ -832,17 +942,33 @@ var Particles = /*@__PURE__*/(function (Layer) {
 
     if (this.windData) {
       if (isUnsupportedProjection(args)) { return; }
-      var blendingEnabled = gl.isEnabled(gl.BLEND);
-      gl.disable(gl.BLEND);
+      var capabilities = [gl.BLEND, gl.DEPTH_TEST, gl.STENCIL_TEST, gl.CULL_FACE, gl.SCISSOR_TEST];
+      var enabled = capabilities.map(function (capability) { return gl.isEnabled(capability); });
+      var framebuffer = gl.getParameter(gl.FRAMEBUFFER_BINDING);
+      var viewport = gl.getParameter(gl.VIEWPORT);
+      var colorMask = gl.getParameter(gl.COLOR_WRITEMASK);
+      gl.colorMask(true, true, true, true);
       var tiles = this.visibleParticleTiles();
       tiles.forEach(function (tile) {
         var found = this$1$1.findAssociatedDataTiles(tile);
         if (found) {
+          this$1$1.updateTerrain(gl, args, tile, this$1$1._particleTiles[tile]);
+          // The height-map renderer uses MapLibre's VAOs and depth/stencil state.
+          // Simulation draws into its own texture, not into the terrain.
+          if (gl.bindVertexArray) { gl.bindVertexArray(null); }
+          capabilities.forEach(function (capability) { return gl.disable(capability); });
+          gl.colorMask(true, true, true, true);
           this$1$1.update(gl, this$1$1._particleTiles[tile], found);
           this$1$1._particleTiles[tile].updated = true;
         }
       });
-      if (blendingEnabled) { gl.enable(gl.BLEND); }
+      gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+      gl.viewport.apply(gl, viewport);
+      gl.colorMask.apply(gl, colorMask);
+      capabilities.forEach(function (capability, i) {
+        if (enabled[i]) { gl.enable(capability); }
+        else { gl.disable(capability); }
+      });
       this.map.triggerRepaint();
     }
   };
@@ -1010,6 +1136,7 @@ var Particles = /*@__PURE__*/(function (Layer) {
 
     if (this.windData) {
       if (this.warnOnUnsupportedProjection(args)) { return; }
+      if (this.terrainActive && !this.terrainReady) { return; }
       var matrix = customLayerMatrix(args);
       this.visibleParticleTiles().forEach(function (tile) {
         var found = this$1$1.findAssociatedDataTiles(tile);
@@ -1040,6 +1167,7 @@ var Particles = /*@__PURE__*/(function (Layer) {
     bindTexture(gl, data.tileBottomCenter.getTexture(gl), 8);
     bindTexture(gl, data.tileBottomRight.getTexture(gl), 9);
     bindTexture(gl, this.colorRampTexture, 10);
+    bindTexture(gl, tile.terrainTexture || this.nullTexture, 11);
 
     bindAttribute(gl, this.particleIndexBuffer, program.a_index, 1);
 
@@ -1054,6 +1182,11 @@ var Particles = /*@__PURE__*/(function (Layer) {
     gl.uniform1i(program.u_wind_bottom_center, 8);
     gl.uniform1i(program.u_wind_bottom_right, 9);
     gl.uniform1i(program.u_color_ramp, 10);
+    gl.uniform1i(program.u_terrain, 11);
+    gl.uniform1i(program.u_terrain_enabled, +!!this.terrainActive);
+    gl.uniform4fv(program.u_terrain_bounds, tile.terrainBounds || this.terrainBounds);
+    gl.uniform1f(program.u_terrain_size, this.terrainMapSize);
+    gl.uniform1f(program.u_particle_altitude, this.particleAltitude);
 
     gl.uniform1f(program.u_particles_res, this.particleStateResolution);
 

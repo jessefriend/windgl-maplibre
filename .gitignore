@@ -3,3 +3,6 @@ yarn.lock
 node_modules/
 
 testing/
+test-results/
+playwright-report/
+__pycache__/

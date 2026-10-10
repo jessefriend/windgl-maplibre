@@ -107,42 +107,6 @@
     return new window.DOMMatrixReadOnly(matrix).inverse().toFloat32Array();
   }
 
-  //#region src/reference/v8.json
-  //#endregion
-  //#region src/expression/parsing_error.ts
-  var ExpressionParsingError = class extends Error {
-  	constructor(key, message) {
-  		super(message);
-  		this.message = message;
-  		this.key = key;
-  	}
-  };
-  //#endregion
-  //#region src/expression/scope.ts
-  /**
-  * Tracks `let` bindings during expression parsing.
-  * @private
-  */
-  var Scope = class Scope {
-  	constructor(parent, bindings = []) {
-  		this.parent = parent;
-  		this.bindings = {};
-  		for (const [name, expression] of bindings) this.bindings[name] = expression;
-  	}
-  	concat(bindings) {
-  		return new Scope(this, bindings);
-  	}
-  	get(name) {
-  		if (this.bindings[name]) return this.bindings[name];
-  		if (this.parent) return this.parent.get(name);
-  		throw new Error(`${name} not found in scope.`);
-  	}
-  	has(name) {
-  		if (this.bindings[name]) return true;
-  		return this.parent ? this.parent.has(name) : false;
-  	}
-  };
-  //#endregion
   //#region src/expression/types.ts
   const NullType = { kind: "null" };
   const NumberType = { kind: "number" };
@@ -238,7 +202,7 @@
   	if (provided.kind === "array" && sample.kind === "array") return provided.itemType.kind === sample.itemType.kind && typeof provided.N === "number";
   	return provided.kind === sample.kind;
   }
-  //#endregion
+
   //#region src/expression/types/color_spaces.ts
   const Xn = .96422;
   const Yn = 1;
@@ -333,7 +297,7 @@
   		alpha
   	];
   }
-  //#endregion
+
   //#region src/util/get_own.ts
   const hasOwnProperty = Object.hasOwn || function hasOwnProperty(object, key) {
   	return Object.prototype.hasOwnProperty.call(object, key);
@@ -341,7 +305,7 @@
   function getOwn(object, key) {
   	return hasOwnProperty(object, key) ? object[key] : void 0;
   }
-  //#endregion
+
   //#region src/expression/types/parse_css_color.ts
   /**
   * CSS color parser compliant with CSS Color 4 Specification.
@@ -1219,7 +1183,7 @@
   		50
   	]
   };
-  //#endregion
+
   //#region src/util/interpolate-primitives.ts
   function interpolateNumber(from, to, t) {
   	return from + t * (to - from);
@@ -1229,7 +1193,7 @@
   		return interpolateNumber(d, to[i], t);
   	});
   }
-  //#endregion
+
   //#region src/expression/types/color.ts
   /**
   * Checks whether the specified color space is one of the supported interpolation color spaces.
@@ -1413,26 +1377,7 @@
   		}
   	}
   };
-  //#endregion
-  //#region src/expression/types/collator.ts
-  var Collator = class {
-  	constructor(caseSensitive, diacriticSensitive, locale) {
-  		if (caseSensitive) this.sensitivity = diacriticSensitive ? "variant" : "case";
-  		else this.sensitivity = diacriticSensitive ? "accent" : "base";
-  		this.locale = locale;
-  		this.collator = new Intl.Collator(this.locale ? this.locale : [], {
-  			sensitivity: this.sensitivity,
-  			usage: "search"
-  		});
-  	}
-  	compare(lhs, rhs) {
-  		return this.collator.compare(lhs, rhs);
-  	}
-  	resolvedLocale() {
-  		return new Intl.Collator(this.locale ? this.locale : []).resolvedOptions().locale;
-  	}
-  };
-  //#endregion
+
   //#region src/expression/types/formatted.ts
   const VERTICAL_ALIGN_OPTIONS = [
   	"bottom",
@@ -1469,7 +1414,7 @@
   		return this.sections.map((section) => section.text).join("");
   	}
   };
-  //#endregion
+
   //#region src/expression/types/padding.ts
   /**
   * A set of four numbers representing padding around a box. Create instances from
@@ -1513,14 +1458,12 @@
   					input[1]
   				];
   				break;
-  			case 3:
-  				input = [
-  					input[0],
-  					input[1],
-  					input[2],
-  					input[1]
-  				];
-  				break;
+  			case 3: input = [
+  				input[0],
+  				input[1],
+  				input[2],
+  				input[1]
+  			];
   		}
   		return new Padding(input);
   	}
@@ -1531,7 +1474,7 @@
   		return new Padding(interpolateArray(from.values, to.values, t));
   	}
   };
-  //#endregion
+
   //#region src/expression/types/number_array.ts
   /**
   * An array of numbers. Create instances from
@@ -1561,7 +1504,7 @@
   		return new NumberArray(interpolateArray(from.values, to.values, t));
   	}
   };
-  //#endregion
+
   //#region src/expression/types/color_array.ts
   /**
   * An array of colors. Create instances from
@@ -1604,7 +1547,7 @@
   		return new ColorArray(colors);
   	}
   };
-  //#endregion
+
   //#region src/expression/runtime_error.ts
   var RuntimeError = class extends Error {
   	constructor(message, path) {
@@ -1616,7 +1559,7 @@
   		return this.message;
   	}
   };
-  //#endregion
+
   //#region src/expression/types/variable_anchor_offset_collection.ts
   /** Set of valid anchor positions, as a set for validation */
   const anchors = /* @__PURE__ */ new Set([
@@ -1668,7 +1611,7 @@
   		return new VariableAnchorOffsetCollection(output);
   	}
   };
-  //#endregion
+
   //#region src/expression/types/resolved_image.ts
   var ResolvedImage = class ResolvedImage {
   	constructor(options) {
@@ -1686,7 +1629,7 @@
   		});
   	}
   };
-  //#endregion
+
   //#region src/expression/types/projection_definition.ts
   var ProjectionDefinition = class ProjectionDefinition {
   	constructor(from, to, transition) {
@@ -1712,7 +1655,26 @@
   		if (typeof input === "string") return new ProjectionDefinition(input, input, 1);
   	}
   };
-  //#endregion
+
+  //#region src/expression/types/collator.ts
+  var Collator = class {
+  	constructor(caseSensitive, diacriticSensitive, locale) {
+  		if (caseSensitive) this.sensitivity = diacriticSensitive ? "variant" : "case";
+  		else this.sensitivity = diacriticSensitive ? "accent" : "base";
+  		this.locale = locale;
+  		this.collator = new Intl.Collator(this.locale ? this.locale : [], {
+  			sensitivity: this.sensitivity,
+  			usage: "search"
+  		});
+  	}
+  	compare(lhs, rhs) {
+  		return this.collator.compare(lhs, rhs);
+  	}
+  	resolvedLocale() {
+  		return new Intl.Collator(this.locale ? this.locale : []).resolvedOptions().locale;
+  	}
+  };
+
   //#region src/expression/values.ts
   function validateRGBA(r, g, b, a) {
   	if (!(typeof r === "number" && r >= 0 && r <= 255 && typeof g === "number" && g >= 0 && g <= 255 && typeof b === "number" && b >= 0 && b <= 255)) return `Invalid rgba value [${(typeof a === "number" ? [
@@ -1779,7 +1741,7 @@
   	else if (value instanceof Color || value instanceof ProjectionDefinition || value instanceof Formatted || value instanceof Padding || value instanceof NumberArray || value instanceof ColorArray || value instanceof VariableAnchorOffsetCollection || value instanceof ResolvedImage) return value.toString();
   	else return JSON.stringify(value);
   }
-  //#endregion
+
   //#region src/expression/definitions/literal.ts
   var Literal = class Literal {
   	constructor(type, value) {
@@ -1788,7 +1750,7 @@
   	}
   	static parse(args, context) {
   		if (args.length !== 2) return context.error(`'literal' expression requires exactly one argument, but found ${args.length - 1} instead.`);
-  		if (!isValue(args[1])) return context.error("invalid value");
+  		if (!isValue(args[1])) return context.error(`invalid value of type "${typeof args[1]}"`);
   		const value = args[1];
   		let type = typeOf(value);
   		const expected = context.expectedType;
@@ -1803,188 +1765,7 @@
   		return true;
   	}
   };
-  //#endregion
-  //#region src/expression/definitions/assertion.ts
-  const types$1 = {
-  	string: StringType,
-  	number: NumberType,
-  	boolean: BooleanType,
-  	object: ObjectType
-  };
-  var Assertion = class Assertion {
-  	constructor(type, args, key) {
-  		this.type = type;
-  		this.args = args;
-  		this.key = key;
-  	}
-  	static parse(args, context) {
-  		if (args.length < 2) return context.error("Expected at least one argument.");
-  		let i = 1;
-  		let type;
-  		const name = args[0];
-  		if (name === "array") {
-  			let itemType;
-  			if (args.length > 2) {
-  				const type = args[1];
-  				if (typeof type !== "string" || !(type in types$1) || type === "object") return context.error("The item type argument of \"array\" must be one of string, number, boolean", 1);
-  				itemType = types$1[type];
-  				i++;
-  			} else itemType = ValueType;
-  			let N;
-  			if (args.length > 3) {
-  				if (args[2] !== null && (typeof args[2] !== "number" || args[2] < 0 || args[2] !== Math.floor(args[2]))) return context.error("The length argument to \"array\" must be a positive integer literal", 2);
-  				N = args[2];
-  				i++;
-  			}
-  			type = array(itemType, N);
-  		} else {
-  			if (!types$1[name]) throw new Error(`Types doesn't contain name = ${name}`);
-  			type = types$1[name];
-  		}
-  		const parsed = [];
-  		for (; i < args.length; i++) {
-  			const input = context.parse(args[i], i, ValueType);
-  			if (!input) return null;
-  			parsed.push(input);
-  		}
-  		return new Assertion(type, parsed, context.key);
-  	}
-  	evaluate(ctx) {
-  		for (let i = 0; i < this.args.length; i++) {
-  			const value = this.args[i].evaluate(ctx);
-  			if (!checkSubtype(this.type, typeOf(value))) return value;
-  			else if (i === this.args.length - 1) throw new RuntimeError(`Expected value to be of type ${typeToString(this.type)}, but found ${typeToString(typeOf(value))} instead.`, this.key);
-  		}
-  		throw new Error();
-  	}
-  	eachChild(fn) {
-  		this.args.forEach(fn);
-  	}
-  	outputDefined() {
-  		return this.args.every((arg) => arg.outputDefined());
-  	}
-  };
-  //#endregion
-  //#region src/expression/definitions/coercion.ts
-  const types = {
-  	"to-boolean": BooleanType,
-  	"to-color": ColorType,
-  	"to-number": NumberType,
-  	"to-string": StringType
-  };
-  /**
-  * Special form for error-coalescing coercion expressions "to-number",
-  * "to-color".  Since these coercions can fail at runtime, they accept multiple
-  * arguments, only evaluating one at a time until one succeeds.
-  *
-  * @private
-  */
-  var Coercion = class Coercion {
-  	constructor(type, args, key) {
-  		this.type = type;
-  		this.args = args;
-  		this.key = key;
-  	}
-  	static parse(args, context) {
-  		if (args.length < 2) return context.error("Expected at least one argument.");
-  		const name = args[0];
-  		if (!types[name]) throw new Error(`Can't parse ${name} as it is not part of the known types`);
-  		if ((name === "to-boolean" || name === "to-string") && args.length !== 2) return context.error("Expected one argument.");
-  		const type = types[name];
-  		const parsed = [];
-  		for (let i = 1; i < args.length; i++) {
-  			const input = context.parse(args[i], i, ValueType);
-  			if (!input) return null;
-  			parsed.push(input);
-  		}
-  		return new Coercion(type, parsed, context.key);
-  	}
-  	evaluate(ctx) {
-  		switch (this.type.kind) {
-  			case "boolean": return Boolean(this.args[0].evaluate(ctx));
-  			case "color": {
-  				let input;
-  				let error;
-  				for (const arg of this.args) {
-  					input = arg.evaluate(ctx);
-  					error = null;
-  					if (input instanceof Color) return input;
-  					else if (typeof input === "string") {
-  						const c = ctx.parseColor(input);
-  						if (c) return c;
-  					} else if (Array.isArray(input)) {
-  						if (input.length < 3 || input.length > 4) error = `Invalid rgba value ${JSON.stringify(input)}: expected an array containing either three or four numeric values.`;
-  						else error = validateRGBA(input[0], input[1], input[2], input[3]);
-  						if (!error) return new Color(input[0] / 255, input[1] / 255, input[2] / 255, input[3]);
-  					}
-  				}
-  				throw new RuntimeError(error || `Could not parse color from value '${typeof input === "string" ? input : JSON.stringify(input)}'`, this.key);
-  			}
-  			case "padding": {
-  				let input;
-  				for (const arg of this.args) {
-  					input = arg.evaluate(ctx);
-  					const pad = Padding.parse(input);
-  					if (pad) return pad;
-  				}
-  				throw new RuntimeError(`Could not parse padding from value '${typeof input === "string" ? input : JSON.stringify(input)}'`, this.key);
-  			}
-  			case "numberArray": {
-  				let input;
-  				for (const arg of this.args) {
-  					input = arg.evaluate(ctx);
-  					const val = NumberArray.parse(input);
-  					if (val) return val;
-  				}
-  				throw new RuntimeError(`Could not parse numberArray from value '${typeof input === "string" ? input : JSON.stringify(input)}'`, this.key);
-  			}
-  			case "colorArray": {
-  				let input;
-  				for (const arg of this.args) {
-  					input = arg.evaluate(ctx);
-  					const val = ColorArray.parse(input);
-  					if (val) return val;
-  				}
-  				throw new RuntimeError(`Could not parse colorArray from value '${typeof input === "string" ? input : JSON.stringify(input)}'`, this.key);
-  			}
-  			case "variableAnchorOffsetCollection": {
-  				let input;
-  				for (const arg of this.args) {
-  					input = arg.evaluate(ctx);
-  					const coll = VariableAnchorOffsetCollection.parse(input);
-  					if (coll) return coll;
-  				}
-  				throw new RuntimeError(`Could not parse variableAnchorOffsetCollection from value '${typeof input === "string" ? input : JSON.stringify(input)}'`, this.key);
-  			}
-  			case "number": {
-  				let value = null;
-  				for (const arg of this.args) {
-  					value = arg.evaluate(ctx);
-  					if (value === null) return 0;
-  					const num = Number(value);
-  					if (isNaN(num)) continue;
-  					return num;
-  				}
-  				throw new RuntimeError(`Could not convert ${JSON.stringify(value)} to number.`, this.key);
-  			}
-  			case "formatted": return Formatted.fromString(valueToString(this.args[0].evaluate(ctx)));
-  			case "resolvedImage": return ResolvedImage.fromString(valueToString(this.args[0].evaluate(ctx)));
-  			case "projectionDefinition": {
-  				const input = this.args[0].evaluate(ctx);
-  				if (ProjectionDefinition.parse(input)) return input;
-  				throw new RuntimeError(`Could not parse projectionDefinition from value '${typeof input === "string" ? input : JSON.stringify(input)}'`, this.key);
-  			}
-  			default: return valueToString(this.args[0].evaluate(ctx));
-  		}
-  	}
-  	eachChild(fn) {
-  		this.args.forEach(fn);
-  	}
-  	outputDefined() {
-  		return this.args.every((arg) => arg.outputDefined());
-  	}
-  };
-  //#endregion
+
   //#region src/expression/evaluation_context.ts
   const geometryTypes = [
   	"Unknown",
@@ -2026,462 +1807,7 @@
   		return cached;
   	}
   };
-  //#endregion
-  //#region src/expression/parsing_context.ts
-  /**
-  * State associated parsing at a given point in an expression tree.
-  * @private
-  */
-  var ParsingContext = class ParsingContext {
-  	constructor(registry, isConstantFunc, path = [], expectedType, scope = new Scope(), errors = []) {
-  		this.registry = registry;
-  		this.path = path;
-  		this.key = path.map((part) => `[${part}]`).join("");
-  		this.scope = scope;
-  		this.errors = errors;
-  		this.expectedType = expectedType;
-  		this._isConstant = isConstantFunc;
-  	}
-  	/**
-  	* @param expr the JSON expression to parse
-  	* @param index the optional argument index if this expression is an argument of a parent expression that's being parsed
-  	* @param options
-  	* @param options.omitTypeAnnotations set true to omit inferred type annotations.  Caller beware: with this option set, the parsed expression's type will NOT satisfy `expectedType` if it would normally be wrapped in an inferred annotation.
-  	* @private
-  	*/
-  	parse(expr, index, expectedType, bindings, options = {}) {
-  		if (index) return this.concat(index, expectedType, bindings)._parse(expr, options);
-  		return this._parse(expr, options);
-  	}
-  	_parse(expr, options) {
-  		if (expr === null || typeof expr === "string" || typeof expr === "boolean" || typeof expr === "number") expr = ["literal", expr];
-  		const key = this.key;
-  		function annotate(parsed, type, typeAnnotation) {
-  			if (typeAnnotation === "assert") return new Assertion(type, [parsed], key);
-  			else if (typeAnnotation === "coerce") return new Coercion(type, [parsed], key);
-  			else return parsed;
-  		}
-  		if (Array.isArray(expr)) {
-  			if (expr.length === 0) return this.error("Expected an array with at least one element. If you wanted a literal array, use [\"literal\", []].");
-  			const op = expr[0];
-  			if (typeof op !== "string") {
-  				this.error(`Expression name must be a string, but found ${typeof op} instead. If you wanted a literal array, use ["literal", [...]].`, 0);
-  				return null;
-  			}
-  			const Expr = this.registry[op];
-  			if (Expr) {
-  				let parsed = Expr.parse(expr, this);
-  				if (!parsed) return null;
-  				if (this.expectedType) {
-  					const expected = this.expectedType;
-  					const actual = parsed.type;
-  					if ((expected.kind === "string" || expected.kind === "number" || expected.kind === "boolean" || expected.kind === "object" || expected.kind === "array") && actual.kind === "value") parsed = annotate(parsed, expected, options.typeAnnotation || "assert");
-  					else if ("projectionDefinition" === expected.kind && [
-  						"string",
-  						"array",
-  						"value"
-  					].includes(actual.kind) || [
-  						"color",
-  						"formatted",
-  						"resolvedImage"
-  					].includes(expected.kind) && ["value", "string"].includes(actual.kind) || ["padding", "numberArray"].includes(expected.kind) && [
-  						"value",
-  						"number",
-  						"array"
-  					].includes(actual.kind) || "colorArray" === expected.kind && [
-  						"value",
-  						"string",
-  						"array"
-  					].includes(actual.kind) || "variableAnchorOffsetCollection" === expected.kind && ["value", "array"].includes(actual.kind)) parsed = annotate(parsed, expected, options.typeAnnotation || "coerce");
-  					else if (this.checkSubtype(expected, actual)) return null;
-  				}
-  				if (!(parsed instanceof Literal) && parsed.type.kind !== "resolvedImage" && this._isConstant(parsed)) {
-  					const ec = new EvaluationContext();
-  					try {
-  						parsed = new Literal(parsed.type, parsed.evaluate(ec));
-  					} catch (e) {
-  						this.error(e.message);
-  						return null;
-  					}
-  				}
-  				return parsed;
-  			}
-  			return this.error(`Unknown expression "${op}". If you wanted a literal array, use ["literal", [...]].`, 0);
-  		} else if (typeof expr === "undefined") return this.error("'undefined' value invalid. Use null instead.");
-  		else if (typeof expr === "object") return this.error("Bare objects invalid. Use [\"literal\", {...}] instead.");
-  		else return this.error(`Expected an array, but found ${typeof expr} instead.`);
-  	}
-  	/**
-  	* Returns a copy of this context suitable for parsing the subexpression at
-  	* index `index`, optionally appending to 'let' binding map.
-  	*
-  	* Note that `errors` property, intended for collecting errors while
-  	* parsing, is copied by reference rather than cloned.
-  	* @private
-  	*/
-  	concat(index, expectedType, bindings) {
-  		const path = typeof index === "number" ? this.path.concat(index) : this.path;
-  		const scope = bindings ? this.scope.concat(bindings) : this.scope;
-  		return new ParsingContext(this.registry, this._isConstant, path, expectedType || null, scope, this.errors);
-  	}
-  	/**
-  	* Push a parsing (or type checking) error into the `this.errors`
-  	* @param error The message
-  	* @param keys Optionally specify the source of the error at a child
-  	* of the current expression at `this.key`.
-  	* @private
-  	*/
-  	error(error, ...keys) {
-  		const key = `${this.key}${keys.map((k) => `[${k}]`).join("")}`;
-  		this.errors.push(new ExpressionParsingError(key, error));
-  	}
-  	/**
-  	* Returns null if `t` is a subtype of `expected`; otherwise returns an
-  	* error message and also pushes it to `this.errors`.
-  	* @param expected The expected type
-  	* @param t The actual type
-  	* @returns null if `t` is a subtype of `expected`; otherwise returns an error message
-  	*/
-  	checkSubtype(expected, t) {
-  		const error = checkSubtype(expected, t);
-  		if (error) this.error(error);
-  		return error;
-  	}
-  };
-  //#endregion
-  //#region src/expression/definitions/let.ts
-  var Let = class Let {
-  	constructor(bindings, result) {
-  		this.type = result.type;
-  		this.bindings = [].concat(bindings);
-  		this.result = result;
-  	}
-  	evaluate(ctx) {
-  		return this.result.evaluate(ctx);
-  	}
-  	eachChild(fn) {
-  		for (const binding of this.bindings) fn(binding[1]);
-  		fn(this.result);
-  	}
-  	static parse(args, context) {
-  		if (args.length < 4) return context.error(`Expected at least 3 arguments, but found ${args.length - 1} instead.`);
-  		const bindings = [];
-  		for (let i = 1; i < args.length - 1; i += 2) {
-  			const name = args[i];
-  			if (typeof name !== "string") return context.error(`Expected string, but found ${typeof name} instead.`, i);
-  			if (/[^a-zA-Z0-9_]/.test(name)) return context.error("Variable names must contain only alphanumeric characters or '_'.", i);
-  			const value = context.parse(args[i + 1], i + 1);
-  			if (!value) return null;
-  			bindings.push([name, value]);
-  		}
-  		const result = context.parse(args[args.length - 1], args.length - 1, context.expectedType, bindings);
-  		if (!result) return null;
-  		return new Let(bindings, result);
-  	}
-  	outputDefined() {
-  		return this.result.outputDefined();
-  	}
-  };
-  //#endregion
-  //#region src/expression/definitions/var.ts
-  var Var = class Var {
-  	constructor(name, boundExpression) {
-  		this.type = boundExpression.type;
-  		this.name = name;
-  		this.boundExpression = boundExpression;
-  	}
-  	static parse(args, context) {
-  		if (args.length !== 2 || typeof args[1] !== "string") return context.error("'var' expression requires exactly one string literal argument.");
-  		const name = args[1];
-  		if (!context.scope.has(name)) return context.error(`Unknown variable "${name}". Make sure "${name}" has been bound in an enclosing "let" expression before using it.`, 1);
-  		return new Var(name, context.scope.get(name));
-  	}
-  	evaluate(ctx) {
-  		return this.boundExpression.evaluate(ctx);
-  	}
-  	eachChild() {}
-  	outputDefined() {
-  		return false;
-  	}
-  };
-  //#endregion
-  //#region src/expression/definitions/at.ts
-  var At = class At {
-  	constructor(type, index, input, key) {
-  		this.type = type;
-  		this.index = index;
-  		this.input = input;
-  		this.key = key;
-  	}
-  	static parse(args, context) {
-  		if (args.length !== 3) return context.error(`Expected 2 arguments, but found ${args.length - 1} instead.`);
-  		const index = context.parse(args[1], 1, NumberType);
-  		const input = context.parse(args[2], 2, array(context.expectedType || ValueType));
-  		if (!index || !input) return null;
-  		const t = input.type;
-  		return new At(t.itemType, index, input, context.key);
-  	}
-  	evaluate(ctx) {
-  		const index = this.index.evaluate(ctx);
-  		const array = this.input.evaluate(ctx);
-  		if (index < 0) throw new RuntimeError(`Array index out of bounds: ${index} < 0.`, this.key);
-  		if (index >= array.length) throw new RuntimeError(`Array index out of bounds: ${index} > ${array.length - 1}.`, this.key);
-  		if (index !== Math.floor(index)) throw new RuntimeError(`Array index must be an integer, but found ${index} instead.`, this.key);
-  		return array[index];
-  	}
-  	eachChild(fn) {
-  		fn(this.index);
-  		fn(this.input);
-  	}
-  	outputDefined() {
-  		return false;
-  	}
-  };
-  //#endregion
-  //#region src/expression/definitions/in.ts
-  var In = class In {
-  	constructor(needle, haystack, key) {
-  		this.needle = needle;
-  		this.haystack = haystack;
-  		this.key = key;
-  		this.type = BooleanType;
-  	}
-  	static parse(args, context) {
-  		if (args.length !== 3) return context.error(`Expected 2 arguments, but found ${args.length - 1} instead.`);
-  		const needle = context.parse(args[1], 1, ValueType);
-  		const haystack = context.parse(args[2], 2, ValueType);
-  		if (!needle || !haystack) return null;
-  		if (!isValidType(needle.type, [
-  			BooleanType,
-  			StringType,
-  			NumberType,
-  			NullType,
-  			ValueType
-  		])) return context.error(`Expected first argument to be of type boolean, string, number or null, but found ${typeToString(needle.type)} instead`);
-  		return new In(needle, haystack, context.key);
-  	}
-  	evaluate(ctx) {
-  		const needle = this.needle.evaluate(ctx);
-  		const haystack = this.haystack.evaluate(ctx);
-  		if (!haystack) return false;
-  		if (!isValidNativeType(needle, [
-  			"boolean",
-  			"string",
-  			"number",
-  			"null"
-  		])) throw new RuntimeError(`Expected first argument to be of type boolean, string, number or null, but found ${typeToString(typeOf(needle))} instead.`, this.key);
-  		if (!isValidNativeType(haystack, ["string", "array"])) throw new RuntimeError(`Expected second argument to be of type array or string, but found ${typeToString(typeOf(haystack))} instead.`, this.key);
-  		return haystack.indexOf(needle) >= 0;
-  	}
-  	eachChild(fn) {
-  		fn(this.needle);
-  		fn(this.haystack);
-  	}
-  	outputDefined() {
-  		return true;
-  	}
-  };
-  //#endregion
-  //#region src/expression/definitions/index_of.ts
-  var IndexOf = class IndexOf {
-  	constructor(needle, haystack, key, fromIndex) {
-  		this.needle = needle;
-  		this.haystack = haystack;
-  		this.key = key;
-  		this.fromIndex = fromIndex;
-  		this.type = NumberType;
-  	}
-  	static parse(args, context) {
-  		if (args.length <= 2 || args.length >= 5) return context.error(`Expected 2 or 3 arguments, but found ${args.length - 1} instead.`);
-  		const needle = context.parse(args[1], 1, ValueType);
-  		const haystack = context.parse(args[2], 2, ValueType);
-  		if (!needle || !haystack) return null;
-  		if (!isValidType(needle.type, [
-  			BooleanType,
-  			StringType,
-  			NumberType,
-  			NullType,
-  			ValueType
-  		])) return context.error(`Expected first argument to be of type boolean, string, number or null, but found ${typeToString(needle.type)} instead`);
-  		if (args.length === 4) {
-  			const fromIndex = context.parse(args[3], 3, NumberType);
-  			if (!fromIndex) return null;
-  			return new IndexOf(needle, haystack, context.key, fromIndex);
-  		} else return new IndexOf(needle, haystack, context.key);
-  	}
-  	evaluate(ctx) {
-  		const needle = this.needle.evaluate(ctx);
-  		const haystack = this.haystack.evaluate(ctx);
-  		if (!isValidNativeType(needle, [
-  			"boolean",
-  			"string",
-  			"number",
-  			"null"
-  		])) throw new RuntimeError(`Expected first argument to be of type boolean, string, number or null, but found ${typeToString(typeOf(needle))} instead.`, this.key);
-  		let fromIndex;
-  		if (this.fromIndex) fromIndex = this.fromIndex.evaluate(ctx);
-  		if (isValidNativeType(haystack, ["string"])) {
-  			const rawIndex = haystack.indexOf(needle, fromIndex);
-  			if (rawIndex === -1) return -1;
-  			else return [...haystack.slice(0, rawIndex)].length;
-  		} else if (isValidNativeType(haystack, ["array"])) return haystack.indexOf(needle, fromIndex);
-  		else throw new RuntimeError(`Expected second argument to be of type array or string, but found ${typeToString(typeOf(haystack))} instead.`, this.key);
-  	}
-  	eachChild(fn) {
-  		fn(this.needle);
-  		fn(this.haystack);
-  		if (this.fromIndex) fn(this.fromIndex);
-  	}
-  	outputDefined() {
-  		return false;
-  	}
-  };
-  //#endregion
-  //#region src/expression/definitions/match.ts
-  var Match = class Match {
-  	constructor(inputType, outputType, input, cases, outputs, otherwise) {
-  		this.inputType = inputType;
-  		this.type = outputType;
-  		this.input = input;
-  		this.cases = cases;
-  		this.outputs = outputs;
-  		this.otherwise = otherwise;
-  	}
-  	static parse(args, context) {
-  		if (args.length < 5) return context.error(`Expected at least 4 arguments, but found only ${args.length - 1}.`);
-  		if (args.length % 2 !== 1) return context.error("Expected an even number of arguments.");
-  		let inputType;
-  		let outputType;
-  		if (context.expectedType && context.expectedType.kind !== "value") outputType = context.expectedType;
-  		const cases = {};
-  		const outputs = [];
-  		for (let i = 2; i < args.length - 1; i += 2) {
-  			let labels = args[i];
-  			const value = args[i + 1];
-  			if (!Array.isArray(labels)) labels = [labels];
-  			const labelContext = context.concat(i);
-  			if (labels.length === 0) return labelContext.error("Expected at least one branch label.");
-  			for (const label of labels) {
-  				if (typeof label !== "number" && typeof label !== "string") return labelContext.error("Branch labels must be numbers or strings.");
-  				else if (typeof label === "number" && Math.abs(label) > Number.MAX_SAFE_INTEGER) return labelContext.error(`Branch labels must be integers no larger than ${Number.MAX_SAFE_INTEGER}.`);
-  				else if (typeof label === "number" && Math.floor(label) !== label) return labelContext.error("Numeric branch labels must be integer values.");
-  				else if (!inputType) inputType = typeOf(label);
-  				else if (labelContext.checkSubtype(inputType, typeOf(label))) return null;
-  				if (typeof cases[String(label)] !== "undefined") return labelContext.error("Branch labels must be unique.");
-  				cases[String(label)] = outputs.length;
-  			}
-  			const result = context.parse(value, i, outputType);
-  			if (!result) return null;
-  			outputType = outputType || result.type;
-  			outputs.push(result);
-  		}
-  		const input = context.parse(args[1], 1, ValueType);
-  		if (!input) return null;
-  		const otherwise = context.parse(args[args.length - 1], args.length - 1, outputType);
-  		if (!otherwise) return null;
-  		if (input.type.kind !== "value" && context.concat(1).checkSubtype(inputType, input.type)) return null;
-  		return new Match(inputType, outputType, input, cases, outputs, otherwise);
-  	}
-  	evaluate(ctx) {
-  		const input = this.input.evaluate(ctx);
-  		return (typeOf(input) === this.inputType && this.outputs[this.cases[input]] || this.otherwise).evaluate(ctx);
-  	}
-  	eachChild(fn) {
-  		fn(this.input);
-  		this.outputs.forEach(fn);
-  		fn(this.otherwise);
-  	}
-  	outputDefined() {
-  		return this.outputs.every((out) => out.outputDefined()) && this.otherwise.outputDefined();
-  	}
-  };
-  //#endregion
-  //#region src/expression/definitions/case.ts
-  var Case = class Case {
-  	constructor(type, branches, otherwise) {
-  		this.type = type;
-  		this.branches = branches;
-  		this.otherwise = otherwise;
-  	}
-  	static parse(args, context) {
-  		if (args.length < 4) return context.error(`Expected at least 3 arguments, but found only ${args.length - 1}.`);
-  		if (args.length % 2 !== 0) return context.error("Expected an odd number of arguments.");
-  		let outputType;
-  		if (context.expectedType && context.expectedType.kind !== "value") outputType = context.expectedType;
-  		const branches = [];
-  		for (let i = 1; i < args.length - 1; i += 2) {
-  			const test = context.parse(args[i], i, BooleanType);
-  			if (!test) return null;
-  			const result = context.parse(args[i + 1], i + 1, outputType);
-  			if (!result) return null;
-  			branches.push([test, result]);
-  			outputType = outputType || result.type;
-  		}
-  		const otherwise = context.parse(args[args.length - 1], args.length - 1, outputType);
-  		if (!otherwise) return null;
-  		if (!outputType) throw new Error("Can't infer output type");
-  		return new Case(outputType, branches, otherwise);
-  	}
-  	evaluate(ctx) {
-  		for (const [test, expression] of this.branches) if (test.evaluate(ctx)) return expression.evaluate(ctx);
-  		return this.otherwise.evaluate(ctx);
-  	}
-  	eachChild(fn) {
-  		for (const [test, expression] of this.branches) {
-  			fn(test);
-  			fn(expression);
-  		}
-  		fn(this.otherwise);
-  	}
-  	outputDefined() {
-  		return this.branches.every(([_, out]) => out.outputDefined()) && this.otherwise.outputDefined();
-  	}
-  };
-  //#endregion
-  //#region src/expression/definitions/slice.ts
-  var Slice = class Slice {
-  	constructor(type, input, beginIndex, key, endIndex) {
-  		this.type = type;
-  		this.input = input;
-  		this.beginIndex = beginIndex;
-  		this.key = key;
-  		this.endIndex = endIndex;
-  	}
-  	static parse(args, context) {
-  		if (args.length <= 2 || args.length >= 5) return context.error(`Expected 2 or 3 arguments, but found ${args.length - 1} instead.`);
-  		const input = context.parse(args[1], 1, ValueType);
-  		const beginIndex = context.parse(args[2], 2, NumberType);
-  		if (!input || !beginIndex) return null;
-  		if (!isValidType(input.type, [
-  			array(ValueType),
-  			StringType,
-  			ValueType
-  		])) return context.error(`Expected first argument to be of type array or string, but found ${typeToString(input.type)} instead`);
-  		if (args.length === 4) {
-  			const endIndex = context.parse(args[3], 3, NumberType);
-  			if (!endIndex) return null;
-  			return new Slice(input.type, input, beginIndex, context.key, endIndex);
-  		} else return new Slice(input.type, input, beginIndex, context.key);
-  	}
-  	evaluate(ctx) {
-  		const input = this.input.evaluate(ctx);
-  		const beginIndex = this.beginIndex.evaluate(ctx);
-  		let endIndex;
-  		if (this.endIndex) endIndex = this.endIndex.evaluate(ctx);
-  		if (isValidNativeType(input, ["string"])) return [...input].slice(beginIndex, endIndex).join("");
-  		else if (isValidNativeType(input, ["array"])) return input.slice(beginIndex, endIndex);
-  		else throw new RuntimeError(`Expected first argument to be of type array or string, but found ${typeToString(typeOf(input))} instead.`, this.key);
-  	}
-  	eachChild(fn) {
-  		fn(this.input);
-  		fn(this.beginIndex);
-  		if (this.endIndex) fn(this.endIndex);
-  	}
-  	outputDefined() {
-  		return false;
-  	}
-  };
-  //#endregion
+
   //#region src/expression/stops.ts
   /**
   * Returns the index of the last stop <= input, or 0 if it doesn't exist.
@@ -2505,7 +1831,7 @@
   	}
   	return 0;
   }
-  //#endregion
+
   //#region src/expression/definitions/step.ts
   var Step = class Step {
   	constructor(type, input, stops, key) {
@@ -2559,7 +1885,7 @@
   		return this.outputs.every((out) => out.outputDefined());
   	}
   };
-  //#endregion
+
   //#region node_modules/@mapbox/unitbezier/index.js
   function unitBezier(p1x, p1y, p2x, p2y) {
   	const cx = 3 * p1x;
@@ -2592,7 +1918,7 @@
   		return ((ay * t + by) * t + cy) * t;
   	};
   }
-  //#endregion
+
   //#region src/expression/definitions/interpolate.ts
   var Interpolate = class Interpolate {
   	constructor(type, operator, interpolation, input, stops, key) {
@@ -2754,7 +2080,718 @@
   	variableAnchorOffsetCollection: VariableAnchorOffsetCollection.interpolate,
   	array: interpolateArray
   };
-  //#endregion
+
+  //#region src/expression/definitions/format.ts
+  var FormatExpression = class FormatExpression {
+  	constructor(sections) {
+  		this.type = FormattedType;
+  		this.sections = sections;
+  	}
+  	static parse(args, context) {
+  		if (args.length < 2) return context.error("Expected at least one argument.");
+  		const firstArg = args[1];
+  		if (!Array.isArray(firstArg) && typeof firstArg === "object") return context.error("First argument must be an image or text section.");
+  		const sections = [];
+  		let nextTokenMayBeObject = false;
+  		for (let i = 1; i <= args.length - 1; ++i) {
+  			const arg = args[i];
+  			if (nextTokenMayBeObject && typeof arg === "object" && !Array.isArray(arg)) {
+  				nextTokenMayBeObject = false;
+  				let scale = null;
+  				if (arg["font-scale"]) {
+  					scale = context.parse(arg["font-scale"], 1, NumberType);
+  					if (!scale) return null;
+  				}
+  				let font = null;
+  				if (arg["text-font"]) {
+  					font = context.parse(arg["text-font"], 1, array(StringType));
+  					if (!font) return null;
+  				}
+  				let textColor = null;
+  				if (arg["text-color"]) {
+  					textColor = context.parse(arg["text-color"], 1, ColorType);
+  					if (!textColor) return null;
+  				}
+  				let verticalAlign = null;
+  				if (arg["vertical-align"]) {
+  					if (typeof arg["vertical-align"] === "string" && !VERTICAL_ALIGN_OPTIONS.includes(arg["vertical-align"])) return context.error(`'vertical-align' must be one of: 'bottom', 'center', 'top' but found '${arg["vertical-align"]}' instead.`);
+  					verticalAlign = context.parse(arg["vertical-align"], 1, StringType);
+  					if (!verticalAlign) return null;
+  				}
+  				const lastExpression = sections[sections.length - 1];
+  				lastExpression.scale = scale;
+  				lastExpression.font = font;
+  				lastExpression.textColor = textColor;
+  				lastExpression.verticalAlign = verticalAlign;
+  			} else {
+  				const content = context.parse(args[i], 1, ValueType);
+  				if (!content) return null;
+  				const kind = content.type.kind;
+  				if (kind !== "string" && kind !== "value" && kind !== "null" && kind !== "resolvedImage") return context.error("Formatted text type must be 'string', 'value', 'image' or 'null'.");
+  				nextTokenMayBeObject = true;
+  				sections.push({
+  					content,
+  					scale: null,
+  					font: null,
+  					textColor: null,
+  					verticalAlign: null
+  				});
+  			}
+  		}
+  		return new FormatExpression(sections);
+  	}
+  	evaluate(ctx) {
+  		const evaluateSection = (section) => {
+  			const evaluatedContent = section.content.evaluate(ctx);
+  			if (typeOf(evaluatedContent) === ResolvedImageType) return new FormattedSection("", evaluatedContent, null, null, null, section.verticalAlign ? section.verticalAlign.evaluate(ctx) : null);
+  			return new FormattedSection(valueToString(evaluatedContent), null, section.scale ? section.scale.evaluate(ctx) : null, section.font ? section.font.evaluate(ctx).join(",") : null, section.textColor ? section.textColor.evaluate(ctx) : null, section.verticalAlign ? section.verticalAlign.evaluate(ctx) : null);
+  		};
+  		return new Formatted(this.sections.map(evaluateSection));
+  	}
+  	eachChild(fn) {
+  		for (const section of this.sections) {
+  			fn(section.content);
+  			if (section.scale) fn(section.scale);
+  			if (section.font) fn(section.font);
+  			if (section.textColor) fn(section.textColor);
+  			if (section.verticalAlign) fn(section.verticalAlign);
+  		}
+  	}
+  	outputDefined() {
+  		return false;
+  	}
+  };
+
+  //#region node_modules/quickselect/index.js
+  /**
+  * Rearranges items so that all items in the [left, k] are the smallest.
+  * The k-th element will have the (k - left + 1)-th smallest value in [left, right].
+  *
+  * @template T
+  * @param {T[]} arr the array to partially sort (in place)
+  * @param {number} k middle index for partial sorting (as defined above)
+  * @param {number} [left=0] left index of the range to sort
+  * @param {number} [right=arr.length-1] right index
+  * @param {(a: T, b: T) => number} [compare = (a, b) => a - b] compare function
+  */
+  function quickselect(arr, k, left = 0, right = arr.length - 1, compare = defaultCompare) {
+  	while (right > left) {
+  		if (right - left > 600) {
+  			const n = right - left + 1;
+  			const m = k - left + 1;
+  			const z = Math.log(n);
+  			const s = .5 * Math.exp(2 * z / 3);
+  			const sd = .5 * Math.sqrt(z * s * (n - s) / n) * (m - n / 2 < 0 ? -1 : 1);
+  			quickselect(arr, k, Math.max(left, Math.floor(k - m * s / n + sd)), Math.min(right, Math.floor(k + (n - m) * s / n + sd)), compare);
+  		}
+  		const t = arr[k];
+  		let i = left;
+  		/** @type {number} */
+  		let j = right;
+  		swap(arr, left, k);
+  		if (compare(arr[right], t) > 0) swap(arr, left, right);
+  		while (i < j) {
+  			swap(arr, i, j);
+  			i++;
+  			j--;
+  			while (compare(arr[i], t) < 0) i++;
+  			while (compare(arr[j], t) > 0) j--;
+  		}
+  		if (compare(arr[left], t) === 0) swap(arr, left, j);
+  		else {
+  			j++;
+  			swap(arr, j, right);
+  		}
+  		if (j <= k) left = j + 1;
+  		if (k <= j) right = j - 1;
+  	}
+  }
+  /**
+  * @template T
+  * @param {T[]} arr
+  * @param {number} i
+  * @param {number} j
+  */
+  function swap(arr, i, j) {
+  	const tmp = arr[i];
+  	arr[i] = arr[j];
+  	arr[j] = tmp;
+  }
+  /**
+  * @template T
+  * @param {T} a
+  * @param {T} b
+  * @returns {number}
+  */
+  function defaultCompare(a, b) {
+  	return a < b ? -1 : a > b ? 1 : 0;
+  }
+
+  //#region src/util/classify_rings.ts
+  /**
+  * Classifies an array of rings into polygons with outer rings and holes
+  * @param rings - the rings to classify
+  * @param maxRings - the maximum number of rings to include in a polygon, use 0 to include all rings
+  * @returns an array of polygons with internal rings as holes
+  */
+  function classifyRings(rings, maxRings) {
+  	if (rings.length <= 1) return [rings];
+  	const polygons = [];
+  	let polygon;
+  	let ccw;
+  	for (const ring of rings) {
+  		const area = calculateSignedArea(ring);
+  		if (area === 0) continue;
+  		ring.area = Math.abs(area);
+  		if (ccw === void 0) ccw = area < 0;
+  		if (ccw === area < 0) {
+  			if (polygon) polygons.push(polygon);
+  			polygon = [ring];
+  		} else polygon.push(ring);
+  	}
+  	if (polygon) polygons.push(polygon);
+  	if (maxRings > 1) for (let j = 0; j < polygons.length; j++) {
+  		if (polygons[j].length <= maxRings) continue;
+  		quickselect(polygons[j], maxRings, 1, polygons[j].length - 1, compareAreas);
+  		polygons[j] = polygons[j].slice(0, maxRings);
+  	}
+  	return polygons;
+  }
+  function compareAreas(a, b) {
+  	return b.area - a.area;
+  }
+  /**
+  * Returns the signed area for the polygon ring.  Positive areas are exterior rings and
+  * have a clockwise winding.  Negative areas are interior rings and have a counter clockwise
+  * ordering.
+  *
+  * @param ring - Exterior or interior ring
+  * @returns Signed area
+  */
+  function calculateSignedArea(ring) {
+  	let sum = 0;
+  	for (let i = 0, len = ring.length, j = len - 1, p1, p2; i < len; j = i++) {
+  		p1 = ring[i];
+  		p2 = ring[j];
+  		sum += (p2.x - p1.x) * (p1.y + p2.y);
+  	}
+  	return sum;
+  }
+
+  //#region src/expression/definitions/assertion.ts
+  const types$1 = {
+  	string: StringType,
+  	number: NumberType,
+  	boolean: BooleanType,
+  	object: ObjectType
+  };
+  var Assertion = class Assertion {
+  	constructor(type, args, key) {
+  		this.type = type;
+  		this.args = args;
+  		this.key = key;
+  	}
+  	static parse(args, context) {
+  		if (args.length < 2) return context.error("Expected at least one argument.");
+  		let i = 1;
+  		let type;
+  		const name = args[0];
+  		if (name === "array") {
+  			let itemType;
+  			if (args.length > 2) {
+  				const type = args[1];
+  				if (typeof type !== "string" || !(type in types$1) || type === "object") return context.error("The item type argument of \"array\" must be one of string, number, boolean", 1);
+  				itemType = types$1[type];
+  				i++;
+  			} else itemType = ValueType;
+  			let N;
+  			if (args.length > 3) {
+  				if (args[2] !== null && (typeof args[2] !== "number" || args[2] < 0 || args[2] !== Math.floor(args[2]))) return context.error("The length argument to \"array\" must be a positive integer literal", 2);
+  				N = args[2];
+  				i++;
+  			}
+  			type = array(itemType, N);
+  		} else {
+  			if (!types$1[name]) throw new Error(`Types doesn't contain name = ${name}`);
+  			type = types$1[name];
+  		}
+  		const parsed = [];
+  		for (; i < args.length; i++) {
+  			const input = context.parse(args[i], i, ValueType);
+  			if (!input) return null;
+  			parsed.push(input);
+  		}
+  		return new Assertion(type, parsed, context.key);
+  	}
+  	evaluate(ctx) {
+  		for (let i = 0; i < this.args.length; i++) {
+  			const value = this.args[i].evaluate(ctx);
+  			if (!checkSubtype(this.type, typeOf(value))) return value;
+  			else if (i === this.args.length - 1) throw new RuntimeError(`Expected value to be of type ${typeToString(this.type)}, but found ${typeToString(typeOf(value))} instead.`, this.key);
+  		}
+  		throw new Error();
+  	}
+  	eachChild(fn) {
+  		this.args.forEach(fn);
+  	}
+  	outputDefined() {
+  		return this.args.every((arg) => arg.outputDefined());
+  	}
+  };
+
+  //#region src/expression/definitions/coercion.ts
+  const types = {
+  	"to-boolean": BooleanType,
+  	"to-color": ColorType,
+  	"to-number": NumberType,
+  	"to-string": StringType
+  };
+  /**
+  * Special form for error-coalescing coercion expressions "to-number",
+  * "to-color".  Since these coercions can fail at runtime, they accept multiple
+  * arguments, only evaluating one at a time until one succeeds.
+  *
+  * @private
+  */
+  var Coercion = class Coercion {
+  	constructor(type, args, key) {
+  		this.type = type;
+  		this.args = args;
+  		this.key = key;
+  	}
+  	static parse(args, context) {
+  		if (args.length < 2) return context.error("Expected at least one argument.");
+  		const name = args[0];
+  		if (!types[name]) throw new Error(`Can't parse ${name} as it is not part of the known types`);
+  		if ((name === "to-boolean" || name === "to-string") && args.length !== 2) return context.error("Expected one argument.");
+  		const type = types[name];
+  		const parsed = [];
+  		for (let i = 1; i < args.length; i++) {
+  			const input = context.parse(args[i], i, ValueType);
+  			if (!input) return null;
+  			parsed.push(input);
+  		}
+  		return new Coercion(type, parsed, context.key);
+  	}
+  	evaluate(ctx) {
+  		switch (this.type.kind) {
+  			case "boolean": return Boolean(this.args[0].evaluate(ctx));
+  			case "color": {
+  				let input;
+  				let error;
+  				for (const arg of this.args) {
+  					input = arg.evaluate(ctx);
+  					error = null;
+  					if (input instanceof Color) return input;
+  					else if (typeof input === "string") {
+  						const c = ctx.parseColor(input);
+  						if (c) return c;
+  					} else if (Array.isArray(input)) {
+  						if (input.length < 3 || input.length > 4) error = `Invalid rgba value ${JSON.stringify(input)}: expected an array containing either three or four numeric values.`;
+  						else error = validateRGBA(input[0], input[1], input[2], input[3]);
+  						if (!error) return new Color(input[0] / 255, input[1] / 255, input[2] / 255, input[3]);
+  					}
+  				}
+  				throw new RuntimeError(error || `Could not parse color from value '${typeof input === "string" ? input : JSON.stringify(input)}'`, this.key);
+  			}
+  			case "padding": {
+  				let input;
+  				for (const arg of this.args) {
+  					input = arg.evaluate(ctx);
+  					const pad = Padding.parse(input);
+  					if (pad) return pad;
+  				}
+  				throw new RuntimeError(`Could not parse padding from value '${typeof input === "string" ? input : JSON.stringify(input)}'`, this.key);
+  			}
+  			case "numberArray": {
+  				let input;
+  				for (const arg of this.args) {
+  					input = arg.evaluate(ctx);
+  					const val = NumberArray.parse(input);
+  					if (val) return val;
+  				}
+  				throw new RuntimeError(`Could not parse numberArray from value '${typeof input === "string" ? input : JSON.stringify(input)}'`, this.key);
+  			}
+  			case "colorArray": {
+  				let input;
+  				for (const arg of this.args) {
+  					input = arg.evaluate(ctx);
+  					const val = ColorArray.parse(input);
+  					if (val) return val;
+  				}
+  				throw new RuntimeError(`Could not parse colorArray from value '${typeof input === "string" ? input : JSON.stringify(input)}'`, this.key);
+  			}
+  			case "variableAnchorOffsetCollection": {
+  				let input;
+  				for (const arg of this.args) {
+  					input = arg.evaluate(ctx);
+  					const coll = VariableAnchorOffsetCollection.parse(input);
+  					if (coll) return coll;
+  				}
+  				throw new RuntimeError(`Could not parse variableAnchorOffsetCollection from value '${typeof input === "string" ? input : JSON.stringify(input)}'`, this.key);
+  			}
+  			case "number": {
+  				let value = null;
+  				for (const arg of this.args) {
+  					value = arg.evaluate(ctx);
+  					if (value === null) return 0;
+  					const num = Number(value);
+  					if (isNaN(num)) continue;
+  					return num;
+  				}
+  				throw new RuntimeError(`Could not convert ${JSON.stringify(value)} to number.`, this.key);
+  			}
+  			case "formatted": return Formatted.fromString(valueToString(this.args[0].evaluate(ctx)));
+  			case "resolvedImage": return ResolvedImage.fromString(valueToString(this.args[0].evaluate(ctx)));
+  			case "projectionDefinition": {
+  				const input = this.args[0].evaluate(ctx);
+  				if (ProjectionDefinition.parse(input)) return input;
+  				throw new RuntimeError(`Could not parse projectionDefinition from value '${typeof input === "string" ? input : JSON.stringify(input)}'`, this.key);
+  			}
+  			default: return valueToString(this.args[0].evaluate(ctx));
+  		}
+  	}
+  	eachChild(fn) {
+  		this.args.forEach(fn);
+  	}
+  	outputDefined() {
+  		return this.args.every((arg) => arg.outputDefined());
+  	}
+  };
+
+  //#region src/expression/definitions/let.ts
+  var Let = class Let {
+  	constructor(bindings, result) {
+  		this.type = result.type;
+  		this.bindings = [].concat(bindings);
+  		this.result = result;
+  	}
+  	evaluate(ctx) {
+  		return this.result.evaluate(ctx);
+  	}
+  	eachChild(fn) {
+  		for (const binding of this.bindings) fn(binding[1]);
+  		fn(this.result);
+  	}
+  	static parse(args, context) {
+  		if (args.length < 4) return context.error(`Expected at least 3 arguments, but found ${args.length - 1} instead.`);
+  		const bindings = [];
+  		for (let i = 1; i < args.length - 1; i += 2) {
+  			const name = args[i];
+  			if (typeof name !== "string") return context.error(`Expected string, but found ${typeof name} instead.`, i);
+  			if (/[^a-zA-Z0-9_]/.test(name)) return context.error("Variable names must contain only alphanumeric characters or '_'.", i);
+  			const value = context.parse(args[i + 1], i + 1);
+  			if (!value) return null;
+  			bindings.push([name, value]);
+  		}
+  		const result = context.parse(args[args.length - 1], args.length - 1, context.expectedType, bindings);
+  		if (!result) return null;
+  		return new Let(bindings, result);
+  	}
+  	outputDefined() {
+  		return this.result.outputDefined();
+  	}
+  };
+
+  //#region src/expression/definitions/var.ts
+  var Var = class Var {
+  	constructor(name, boundExpression) {
+  		this.type = boundExpression.type;
+  		this.name = name;
+  		this.boundExpression = boundExpression;
+  	}
+  	static parse(args, context) {
+  		if (args.length !== 2 || typeof args[1] !== "string") return context.error("'var' expression requires exactly one string literal argument.");
+  		const name = args[1];
+  		if (!context.scope.has(name)) return context.error(`Unknown variable "${name}". Make sure "${name}" has been bound in an enclosing "let" expression before using it.`, 1);
+  		return new Var(name, context.scope.get(name));
+  	}
+  	evaluate(ctx) {
+  		return this.boundExpression.evaluate(ctx);
+  	}
+  	eachChild() {}
+  	outputDefined() {
+  		return false;
+  	}
+  };
+
+  //#region src/expression/definitions/at.ts
+  var At = class At {
+  	constructor(type, index, input, key) {
+  		this.type = type;
+  		this.index = index;
+  		this.input = input;
+  		this.key = key;
+  	}
+  	static parse(args, context) {
+  		if (args.length !== 3) return context.error(`Expected 2 arguments, but found ${args.length - 1} instead.`);
+  		const index = context.parse(args[1], 1, NumberType);
+  		const input = context.parse(args[2], 2, array(context.expectedType || ValueType));
+  		if (!index || !input) return null;
+  		const t = input.type;
+  		return new At(t.itemType, index, input, context.key);
+  	}
+  	evaluate(ctx) {
+  		const index = this.index.evaluate(ctx);
+  		const array = this.input.evaluate(ctx);
+  		if (index < 0) throw new RuntimeError(`Array index out of bounds: ${index} < 0.`, this.key);
+  		if (index >= array.length) throw new RuntimeError(`Array index out of bounds: ${index} > ${array.length - 1}.`, this.key);
+  		if (index !== Math.floor(index)) throw new RuntimeError(`Array index must be an integer, but found ${index} instead.`, this.key);
+  		return array[index];
+  	}
+  	eachChild(fn) {
+  		fn(this.index);
+  		fn(this.input);
+  	}
+  	outputDefined() {
+  		return false;
+  	}
+  };
+
+  //#region src/expression/definitions/in.ts
+  var In = class In {
+  	constructor(needle, haystack, key) {
+  		this.needle = needle;
+  		this.haystack = haystack;
+  		this.key = key;
+  		this.type = BooleanType;
+  	}
+  	static parse(args, context) {
+  		if (args.length !== 3) return context.error(`Expected 2 arguments, but found ${args.length - 1} instead.`);
+  		const needle = context.parse(args[1], 1, ValueType);
+  		const haystack = context.parse(args[2], 2, ValueType);
+  		if (!needle || !haystack) return null;
+  		if (!isValidType(needle.type, [
+  			BooleanType,
+  			StringType,
+  			NumberType,
+  			NullType,
+  			ValueType
+  		])) return context.error(`Expected first argument to be of type boolean, string, number or null, but found ${typeToString(needle.type)} instead`);
+  		return new In(needle, haystack, context.key);
+  	}
+  	evaluate(ctx) {
+  		const needle = this.needle.evaluate(ctx);
+  		const haystack = this.haystack.evaluate(ctx);
+  		if (!haystack) return false;
+  		if (!isValidNativeType(needle, [
+  			"boolean",
+  			"string",
+  			"number",
+  			"null"
+  		])) throw new RuntimeError(`Expected first argument to be of type boolean, string, number or null, but found ${typeToString(typeOf(needle))} instead.`, this.key);
+  		if (!isValidNativeType(haystack, ["string", "array"])) throw new RuntimeError(`Expected second argument to be of type array or string, but found ${typeToString(typeOf(haystack))} instead.`, this.key);
+  		return haystack.indexOf(needle) >= 0;
+  	}
+  	eachChild(fn) {
+  		fn(this.needle);
+  		fn(this.haystack);
+  	}
+  	outputDefined() {
+  		return true;
+  	}
+  };
+
+  //#region src/expression/definitions/index_of.ts
+  var IndexOf = class IndexOf {
+  	constructor(needle, haystack, key, fromIndex) {
+  		this.needle = needle;
+  		this.haystack = haystack;
+  		this.key = key;
+  		this.fromIndex = fromIndex;
+  		this.type = NumberType;
+  	}
+  	static parse(args, context) {
+  		if (args.length <= 2 || args.length >= 5) return context.error(`Expected 2 or 3 arguments, but found ${args.length - 1} instead.`);
+  		const needle = context.parse(args[1], 1, ValueType);
+  		const haystack = context.parse(args[2], 2, ValueType);
+  		if (!needle || !haystack) return null;
+  		if (!isValidType(needle.type, [
+  			BooleanType,
+  			StringType,
+  			NumberType,
+  			NullType,
+  			ValueType
+  		])) return context.error(`Expected first argument to be of type boolean, string, number or null, but found ${typeToString(needle.type)} instead`);
+  		if (args.length === 4) {
+  			const fromIndex = context.parse(args[3], 3, NumberType);
+  			if (!fromIndex) return null;
+  			return new IndexOf(needle, haystack, context.key, fromIndex);
+  		} else return new IndexOf(needle, haystack, context.key);
+  	}
+  	evaluate(ctx) {
+  		const needle = this.needle.evaluate(ctx);
+  		const haystack = this.haystack.evaluate(ctx);
+  		if (!isValidNativeType(needle, [
+  			"boolean",
+  			"string",
+  			"number",
+  			"null"
+  		])) throw new RuntimeError(`Expected first argument to be of type boolean, string, number or null, but found ${typeToString(typeOf(needle))} instead.`, this.key);
+  		let fromIndex;
+  		if (this.fromIndex) fromIndex = this.fromIndex.evaluate(ctx);
+  		if (isValidNativeType(haystack, ["string"])) {
+  			const rawIndex = haystack.indexOf(needle, fromIndex);
+  			if (rawIndex === -1) return -1;
+  			else return [...haystack.slice(0, rawIndex)].length;
+  		} else if (isValidNativeType(haystack, ["array"])) return haystack.indexOf(needle, fromIndex);
+  		else throw new RuntimeError(`Expected second argument to be of type array or string, but found ${typeToString(typeOf(haystack))} instead.`, this.key);
+  	}
+  	eachChild(fn) {
+  		fn(this.needle);
+  		fn(this.haystack);
+  		if (this.fromIndex) fn(this.fromIndex);
+  	}
+  	outputDefined() {
+  		return false;
+  	}
+  };
+
+  //#region src/expression/definitions/match.ts
+  var Match = class Match {
+  	constructor(inputType, outputType, input, cases, outputs, otherwise) {
+  		this.inputType = inputType;
+  		this.type = outputType;
+  		this.input = input;
+  		this.cases = cases;
+  		this.outputs = outputs;
+  		this.otherwise = otherwise;
+  	}
+  	static parse(args, context) {
+  		if (args.length < 5) return context.error(`Expected at least 4 arguments, but found only ${args.length - 1}.`);
+  		if (args.length % 2 !== 1) return context.error("Expected an even number of arguments.");
+  		let inputType;
+  		let outputType;
+  		if (context.expectedType && context.expectedType.kind !== "value") outputType = context.expectedType;
+  		const cases = {};
+  		const outputs = [];
+  		for (let i = 2; i < args.length - 1; i += 2) {
+  			let labels = args[i];
+  			const value = args[i + 1];
+  			if (!Array.isArray(labels)) labels = [labels];
+  			const labelContext = context.concat(i);
+  			if (labels.length === 0) return labelContext.error("Expected at least one branch label.");
+  			for (const label of labels) {
+  				if (typeof label !== "number" && typeof label !== "string") return labelContext.error("Branch labels must be numbers or strings.");
+  				else if (typeof label === "number" && Math.abs(label) > Number.MAX_SAFE_INTEGER) return labelContext.error(`Branch labels must be integers no larger than ${Number.MAX_SAFE_INTEGER}.`);
+  				else if (typeof label === "number" && Math.floor(label) !== label) return labelContext.error("Numeric branch labels must be integer values.");
+  				else if (!inputType) inputType = typeOf(label);
+  				else if (labelContext.checkSubtype(inputType, typeOf(label))) return null;
+  				if (typeof cases[String(label)] !== "undefined") return labelContext.error("Branch labels must be unique.");
+  				cases[String(label)] = outputs.length;
+  			}
+  			const result = context.parse(value, i, outputType);
+  			if (!result) return null;
+  			outputType = outputType || result.type;
+  			outputs.push(result);
+  		}
+  		const input = context.parse(args[1], 1, ValueType);
+  		if (!input) return null;
+  		const otherwise = context.parse(args[args.length - 1], args.length - 1, outputType);
+  		if (!otherwise) return null;
+  		if (input.type.kind !== "value" && context.concat(1).checkSubtype(inputType, input.type)) return null;
+  		return new Match(inputType, outputType, input, cases, outputs, otherwise);
+  	}
+  	evaluate(ctx) {
+  		const input = this.input.evaluate(ctx);
+  		return (typeOf(input) === this.inputType && this.outputs[this.cases[input]] || this.otherwise).evaluate(ctx);
+  	}
+  	eachChild(fn) {
+  		fn(this.input);
+  		this.outputs.forEach(fn);
+  		fn(this.otherwise);
+  	}
+  	outputDefined() {
+  		return this.outputs.every((out) => out.outputDefined()) && this.otherwise.outputDefined();
+  	}
+  };
+
+  //#region src/expression/definitions/case.ts
+  var Case = class Case {
+  	constructor(type, branches, otherwise) {
+  		this.type = type;
+  		this.branches = branches;
+  		this.otherwise = otherwise;
+  	}
+  	static parse(args, context) {
+  		if (args.length < 4) return context.error(`Expected at least 3 arguments, but found only ${args.length - 1}.`);
+  		if (args.length % 2 !== 0) return context.error("Expected an odd number of arguments.");
+  		let outputType;
+  		if (context.expectedType && context.expectedType.kind !== "value") outputType = context.expectedType;
+  		const branches = [];
+  		for (let i = 1; i < args.length - 1; i += 2) {
+  			const test = context.parse(args[i], i, BooleanType);
+  			if (!test) return null;
+  			const result = context.parse(args[i + 1], i + 1, outputType);
+  			if (!result) return null;
+  			branches.push([test, result]);
+  			outputType = outputType || result.type;
+  		}
+  		const otherwise = context.parse(args[args.length - 1], args.length - 1, outputType);
+  		if (!otherwise) return null;
+  		if (!outputType) throw new Error("Can't infer output type");
+  		return new Case(outputType, branches, otherwise);
+  	}
+  	evaluate(ctx) {
+  		for (const [test, expression] of this.branches) if (test.evaluate(ctx)) return expression.evaluate(ctx);
+  		return this.otherwise.evaluate(ctx);
+  	}
+  	eachChild(fn) {
+  		for (const [test, expression] of this.branches) {
+  			fn(test);
+  			fn(expression);
+  		}
+  		fn(this.otherwise);
+  	}
+  	outputDefined() {
+  		return this.branches.every(([_, out]) => out.outputDefined()) && this.otherwise.outputDefined();
+  	}
+  };
+
+  //#region src/expression/definitions/slice.ts
+  var Slice = class Slice {
+  	constructor(type, input, beginIndex, key, endIndex) {
+  		this.type = type;
+  		this.input = input;
+  		this.beginIndex = beginIndex;
+  		this.key = key;
+  		this.endIndex = endIndex;
+  	}
+  	static parse(args, context) {
+  		if (args.length <= 2 || args.length >= 5) return context.error(`Expected 2 or 3 arguments, but found ${args.length - 1} instead.`);
+  		const input = context.parse(args[1], 1, ValueType);
+  		const beginIndex = context.parse(args[2], 2, NumberType);
+  		if (!input || !beginIndex) return null;
+  		if (!isValidType(input.type, [
+  			array(ValueType),
+  			StringType,
+  			ValueType
+  		])) return context.error(`Expected first argument to be of type array or string, but found ${typeToString(input.type)} instead`);
+  		if (args.length === 4) {
+  			const endIndex = context.parse(args[3], 3, NumberType);
+  			if (!endIndex) return null;
+  			return new Slice(input.type, input, beginIndex, context.key, endIndex);
+  		} else return new Slice(input.type, input, beginIndex, context.key);
+  	}
+  	evaluate(ctx) {
+  		const input = this.input.evaluate(ctx);
+  		const beginIndex = this.beginIndex.evaluate(ctx);
+  		let endIndex;
+  		if (this.endIndex) endIndex = this.endIndex.evaluate(ctx);
+  		if (isValidNativeType(input, ["string"])) return [...input].slice(beginIndex, endIndex).join("");
+  		else if (isValidNativeType(input, ["array"])) return input.slice(beginIndex, endIndex);
+  		else throw new RuntimeError(`Expected first argument to be of type array or string, but found ${typeToString(typeOf(input))} instead.`, this.key);
+  	}
+  	eachChild(fn) {
+  		fn(this.input);
+  		fn(this.beginIndex);
+  		if (this.endIndex) fn(this.endIndex);
+  	}
+  	outputDefined() {
+  		return false;
+  	}
+  };
+
   //#region src/expression/definitions/coalesce.ts
   var Coalesce = class Coalesce {
   	constructor(type, args) {
@@ -2799,7 +2836,7 @@
   		return this.args.every((arg) => arg.outputDefined());
   	}
   };
-  //#endregion
+
   //#region src/expression/definitions/comparison.ts
   function isComparableType(op, type) {
   	if (op === "==" || op === "!=") return type.kind === "boolean" || type.kind === "string" || type.kind === "number" || type.kind === "null" || type.kind === "value";
@@ -2922,7 +2959,7 @@
   const GreaterThan = makeComparison(">", gt, gtCollate);
   const LessThanOrEqual = makeComparison("<=", lteq, lteqCollate);
   const GreaterThanOrEqual = makeComparison(">=", gteq, gteqCollate);
-  //#endregion
+
   //#region src/expression/definitions/collator.ts
   var CollatorExpression = class CollatorExpression {
   	constructor(caseSensitive, diacriticSensitive, locale) {
@@ -2958,7 +2995,7 @@
   		return false;
   	}
   };
-  //#endregion
+
   //#region src/expression/definitions/number_format.ts
   var NumberFormat = class NumberFormat {
   	constructor(number, locale, currency, unit, minFractionDigits, maxFractionDigits) {
@@ -3025,88 +3062,7 @@
   		return false;
   	}
   };
-  //#endregion
-  //#region src/expression/definitions/format.ts
-  var FormatExpression = class FormatExpression {
-  	constructor(sections) {
-  		this.type = FormattedType;
-  		this.sections = sections;
-  	}
-  	static parse(args, context) {
-  		if (args.length < 2) return context.error("Expected at least one argument.");
-  		const firstArg = args[1];
-  		if (!Array.isArray(firstArg) && typeof firstArg === "object") return context.error("First argument must be an image or text section.");
-  		const sections = [];
-  		let nextTokenMayBeObject = false;
-  		for (let i = 1; i <= args.length - 1; ++i) {
-  			const arg = args[i];
-  			if (nextTokenMayBeObject && typeof arg === "object" && !Array.isArray(arg)) {
-  				nextTokenMayBeObject = false;
-  				let scale = null;
-  				if (arg["font-scale"]) {
-  					scale = context.parse(arg["font-scale"], 1, NumberType);
-  					if (!scale) return null;
-  				}
-  				let font = null;
-  				if (arg["text-font"]) {
-  					font = context.parse(arg["text-font"], 1, array(StringType));
-  					if (!font) return null;
-  				}
-  				let textColor = null;
-  				if (arg["text-color"]) {
-  					textColor = context.parse(arg["text-color"], 1, ColorType);
-  					if (!textColor) return null;
-  				}
-  				let verticalAlign = null;
-  				if (arg["vertical-align"]) {
-  					if (typeof arg["vertical-align"] === "string" && !VERTICAL_ALIGN_OPTIONS.includes(arg["vertical-align"])) return context.error(`'vertical-align' must be one of: 'bottom', 'center', 'top' but found '${arg["vertical-align"]}' instead.`);
-  					verticalAlign = context.parse(arg["vertical-align"], 1, StringType);
-  					if (!verticalAlign) return null;
-  				}
-  				const lastExpression = sections[sections.length - 1];
-  				lastExpression.scale = scale;
-  				lastExpression.font = font;
-  				lastExpression.textColor = textColor;
-  				lastExpression.verticalAlign = verticalAlign;
-  			} else {
-  				const content = context.parse(args[i], 1, ValueType);
-  				if (!content) return null;
-  				const kind = content.type.kind;
-  				if (kind !== "string" && kind !== "value" && kind !== "null" && kind !== "resolvedImage") return context.error("Formatted text type must be 'string', 'value', 'image' or 'null'.");
-  				nextTokenMayBeObject = true;
-  				sections.push({
-  					content,
-  					scale: null,
-  					font: null,
-  					textColor: null,
-  					verticalAlign: null
-  				});
-  			}
-  		}
-  		return new FormatExpression(sections);
-  	}
-  	evaluate(ctx) {
-  		const evaluateSection = (section) => {
-  			const evaluatedContent = section.content.evaluate(ctx);
-  			if (typeOf(evaluatedContent) === ResolvedImageType) return new FormattedSection("", evaluatedContent, null, null, null, section.verticalAlign ? section.verticalAlign.evaluate(ctx) : null);
-  			return new FormattedSection(valueToString(evaluatedContent), null, section.scale ? section.scale.evaluate(ctx) : null, section.font ? section.font.evaluate(ctx).join(",") : null, section.textColor ? section.textColor.evaluate(ctx) : null, section.verticalAlign ? section.verticalAlign.evaluate(ctx) : null);
-  		};
-  		return new Formatted(this.sections.map(evaluateSection));
-  	}
-  	eachChild(fn) {
-  		for (const section of this.sections) {
-  			fn(section.content);
-  			if (section.scale) fn(section.scale);
-  			if (section.font) fn(section.font);
-  			if (section.textColor) fn(section.textColor);
-  			if (section.verticalAlign) fn(section.verticalAlign);
-  		}
-  	}
-  	outputDefined() {
-  		return false;
-  	}
-  };
-  //#endregion
+
   //#region src/expression/definitions/image.ts
   var ImageExpression = class ImageExpression {
   	constructor(input) {
@@ -3132,7 +3088,7 @@
   		return false;
   	}
   };
-  //#endregion
+
   //#region src/expression/definitions/length.ts
   var Length = class Length {
   	constructor(input, key) {
@@ -3160,7 +3116,7 @@
   		return false;
   	}
   };
-  //#endregion
+
   //#region src/util/geometry_util.ts
   const EXTENT = 8192;
   function getTileCoordinates(p, canonical) {
@@ -3256,7 +3212,7 @@
   	if (det1 > 0 && det2 < 0 || det1 < 0 && det2 > 0) return true;
   	return false;
   }
-  //#endregion
+
   //#region src/expression/definitions/within.ts
   function getTilePolygon(coordinates, bbox, canonical) {
   	const polygon = [];
@@ -3418,7 +3374,7 @@
   		return true;
   	}
   };
-  //#endregion
+
   //#region node_modules/tinyqueue/index.js
   var TinyQueue = class {
   	constructor(data = [], compare = (a, b) => a < b ? -1 : a > b ? 1 : 0) {
@@ -3471,127 +3427,10 @@
   		data[pos] = item;
   	}
   };
-  //#endregion
-  //#region node_modules/quickselect/index.js
-  /**
-  * Rearranges items so that all items in the [left, k] are the smallest.
-  * The k-th element will have the (k - left + 1)-th smallest value in [left, right].
-  *
-  * @template T
-  * @param {T[]} arr the array to partially sort (in place)
-  * @param {number} k middle index for partial sorting (as defined above)
-  * @param {number} [left=0] left index of the range to sort
-  * @param {number} [right=arr.length-1] right index
-  * @param {(a: T, b: T) => number} [compare = (a, b) => a - b] compare function
-  */
-  function quickselect(arr, k, left = 0, right = arr.length - 1, compare = defaultCompare) {
-  	while (right > left) {
-  		if (right - left > 600) {
-  			const n = right - left + 1;
-  			const m = k - left + 1;
-  			const z = Math.log(n);
-  			const s = .5 * Math.exp(2 * z / 3);
-  			const sd = .5 * Math.sqrt(z * s * (n - s) / n) * (m - n / 2 < 0 ? -1 : 1);
-  			quickselect(arr, k, Math.max(left, Math.floor(k - m * s / n + sd)), Math.min(right, Math.floor(k + (n - m) * s / n + sd)), compare);
-  		}
-  		const t = arr[k];
-  		let i = left;
-  		/** @type {number} */
-  		let j = right;
-  		swap(arr, left, k);
-  		if (compare(arr[right], t) > 0) swap(arr, left, right);
-  		while (i < j) {
-  			swap(arr, i, j);
-  			i++;
-  			j--;
-  			while (compare(arr[i], t) < 0) i++;
-  			while (compare(arr[j], t) > 0) j--;
-  		}
-  		if (compare(arr[left], t) === 0) swap(arr, left, j);
-  		else {
-  			j++;
-  			swap(arr, j, right);
-  		}
-  		if (j <= k) left = j + 1;
-  		if (k <= j) right = j - 1;
-  	}
-  }
-  /**
-  * @template T
-  * @param {T[]} arr
-  * @param {number} i
-  * @param {number} j
-  */
-  function swap(arr, i, j) {
-  	const tmp = arr[i];
-  	arr[i] = arr[j];
-  	arr[j] = tmp;
-  }
-  /**
-  * @template T
-  * @param {T} a
-  * @param {T} b
-  * @returns {number}
-  */
-  function defaultCompare(a, b) {
-  	return a < b ? -1 : a > b ? 1 : 0;
-  }
-  //#endregion
-  //#region src/util/classify_rings.ts
-  /**
-  * Classifies an array of rings into polygons with outer rings and holes
-  * @param rings - the rings to classify
-  * @param maxRings - the maximum number of rings to include in a polygon, use 0 to include all rings
-  * @returns an array of polygons with internal rings as holes
-  */
-  function classifyRings(rings, maxRings) {
-  	if (rings.length <= 1) return [rings];
-  	const polygons = [];
-  	let polygon;
-  	let ccw;
-  	for (const ring of rings) {
-  		const area = calculateSignedArea(ring);
-  		if (area === 0) continue;
-  		ring.area = Math.abs(area);
-  		if (ccw === void 0) ccw = area < 0;
-  		if (ccw === area < 0) {
-  			if (polygon) polygons.push(polygon);
-  			polygon = [ring];
-  		} else polygon.push(ring);
-  	}
-  	if (polygon) polygons.push(polygon);
-  	if (maxRings > 1) for (let j = 0; j < polygons.length; j++) {
-  		if (polygons[j].length <= maxRings) continue;
-  		quickselect(polygons[j], maxRings, 1, polygons[j].length - 1, compareAreas);
-  		polygons[j] = polygons[j].slice(0, maxRings);
-  	}
-  	return polygons;
-  }
-  function compareAreas(a, b) {
-  	return b.area - a.area;
-  }
-  /**
-  * Returns the signed area for the polygon ring.  Positive areas are exterior rings and
-  * have a clockwise winding.  Negative areas are interior rings and have a counter clockwise
-  * ordering.
-  *
-  * @param ring - Exterior or interior ring
-  * @returns Signed area
-  */
-  function calculateSignedArea(ring) {
-  	let sum = 0;
-  	for (let i = 0, len = ring.length, j = len - 1, p1, p2; i < len; j = i++) {
-  		p1 = ring[i];
-  		p2 = ring[j];
-  		sum += (p2.x - p1.x) * (p1.y + p2.y);
-  	}
-  	return sum;
-  }
-  //#endregion
+
   //#region src/util/cheap_ruler.ts
   const RE = 6378.137;
-  const FE = 1 / 298.257223563;
-  const E2 = FE * (2 - FE);
+  const E2 = .0066943799901413165;
   const RAD = Math.PI / 180;
   var CheapRuler = class {
   	constructor(lat) {
@@ -3600,7 +3439,7 @@
   		const w2 = 1 / (1 - E2 * (1 - coslat * coslat));
   		const w = Math.sqrt(w2);
   		this.kx = m * w * coslat;
-  		this.ky = m * w * w2 * (1 - E2);
+  		this.ky = m * w * w2 * .9933056200098587;
   	}
   	/**
   	* Given two points of the form [longitude, latitude], returns the distance.
@@ -3671,7 +3510,7 @@
   		return deg;
   	}
   };
-  //#endregion
+
   //#region src/expression/definitions/distance.ts
   const MinPointsSize = 100;
   const MinLinePointsSize = 50;
@@ -3939,9 +3778,7 @@
   			case "LineString":
   				dist = Math.min(dist, pointSetToPointSetDistance(pointPosition, false, geometry.coordinates, true, ruler, dist));
   				break;
-  			case "Polygon":
-  				dist = Math.min(dist, pointsToPolygonDistance(pointPosition, false, geometry.coordinates, ruler, dist));
-  				break;
+  			case "Polygon": dist = Math.min(dist, pointsToPolygonDistance(pointPosition, false, geometry.coordinates, ruler, dist));
   		}
   		if (dist === 0) return dist;
   	}
@@ -3961,9 +3798,7 @@
   			case "LineString":
   				dist = Math.min(dist, pointSetToPointSetDistance(linePositions, true, geometry.coordinates, true, ruler, dist));
   				break;
-  			case "Polygon":
-  				dist = Math.min(dist, pointsToPolygonDistance(linePositions, true, geometry.coordinates, ruler, dist));
-  				break;
+  			case "Polygon": dist = Math.min(dist, pointsToPolygonDistance(linePositions, true, geometry.coordinates, ruler, dist));
   		}
   		if (dist === 0) return dist;
   	}
@@ -3987,9 +3822,7 @@
   			case "LineString":
   				dist = Math.min(dist, pointsToPolygonDistance(geometry.coordinates, true, polygon, ruler, dist));
   				break;
-  			case "Polygon":
-  				dist = Math.min(dist, polygonToPolygonDistance(polygon, geometry.coordinates, ruler, dist));
-  				break;
+  			case "Polygon": dist = Math.min(dist, polygonToPolygonDistance(polygon, geometry.coordinates, ruler, dist));
   		}
   		if (dist === 0) return dist;
   	}
@@ -4045,7 +3878,48 @@
   		return true;
   	}
   };
-  //#endregion
+
+  //#region src/expression/definitions/semiliteral.ts
+  var Semiliteral = class Semiliteral {
+  	constructor(arr) {
+  		let elementType = null;
+  		for (const expr of arr) if (!elementType) elementType = expr.type;
+  		else if (elementType === expr.type) continue;
+  		else {
+  			elementType = ValueType;
+  			break;
+  		}
+  		this.type = array(elementType ?? ValueType, arr.length);
+  		this.arr = arr;
+  	}
+  	static parse(args, context) {
+  		if (args.length !== 2) return context.error(`'semiliteral' expression requires exactly one argument, but found ${args.length - 1} instead.`);
+  		if (!isValue(args[1])) return context.error(`invalid value of type "${typeof args[1]}"`);
+  		const value = args[1];
+  		const type = typeOf(value);
+  		if (type.kind === "array") {
+  			const arr = value;
+  			const arrayContext = context.concat(1);
+  			const parsed = [];
+  			for (let i = 0; i < arr.length; i++) {
+  				const item = arrayContext.parse(arr[i], i, ValueType);
+  				if (!item) return null;
+  				parsed.push(item);
+  			}
+  			return new Semiliteral(parsed);
+  		} else return new Literal(type, value);
+  	}
+  	evaluate(ctx) {
+  		return this.arr.map((arg) => arg.evaluate(ctx));
+  	}
+  	eachChild(fn) {
+  		this.arr.forEach(fn);
+  	}
+  	outputDefined() {
+  		return this.arr.every((arg) => arg.outputDefined());
+  	}
+  };
+
   //#region src/expression/definitions/global_state.ts
   var GlobalState = class GlobalState {
   	constructor(key) {
@@ -4069,7 +3943,7 @@
   		return false;
   	}
   };
-  //#endregion
+
   //#region src/expression/definitions/index.ts
   const expressions = {
   	"==": Equals,
@@ -4098,6 +3972,7 @@
   	number: Assertion,
   	"number-format": NumberFormat,
   	object: Assertion,
+  	semiliteral: Semiliteral,
   	slice: Slice,
   	step: Step,
   	string: Assertion,
@@ -4110,7 +3985,163 @@
   	distance: Distance,
   	"global-state": GlobalState
   };
-  //#endregion
+
+  //#region src/expression/parsing_error.ts
+  var ExpressionParsingError = class extends Error {
+  	constructor(key, message) {
+  		super(message);
+  		this.message = message;
+  		this.key = key;
+  	}
+  };
+
+  //#region src/expression/scope.ts
+  /**
+  * Tracks `let` bindings during expression parsing.
+  * @private
+  */
+  var Scope = class Scope {
+  	constructor(parent, bindings = []) {
+  		this.parent = parent;
+  		this.bindings = {};
+  		for (const [name, expression] of bindings) this.bindings[name] = expression;
+  	}
+  	concat(bindings) {
+  		return new Scope(this, bindings);
+  	}
+  	get(name) {
+  		if (this.bindings[name]) return this.bindings[name];
+  		if (this.parent) return this.parent.get(name);
+  		throw new Error(`${name} not found in scope.`);
+  	}
+  	has(name) {
+  		if (this.bindings[name]) return true;
+  		return this.parent ? this.parent.has(name) : false;
+  	}
+  };
+
+  //#region src/expression/parsing_context.ts
+  /**
+  * State associated parsing at a given point in an expression tree.
+  * @private
+  */
+  var ParsingContext = class ParsingContext {
+  	constructor(registry, isConstantFunc, path = [], expectedType, scope = new Scope(), errors = []) {
+  		this.registry = registry;
+  		this.path = path;
+  		this.key = path.map((part) => `[${part}]`).join("");
+  		this.scope = scope;
+  		this.errors = errors;
+  		this.expectedType = expectedType;
+  		this._isConstant = isConstantFunc;
+  	}
+  	/**
+  	* @param expr the JSON expression to parse
+  	* @param index the optional argument index if this expression is an argument of a parent expression that's being parsed
+  	* @param options
+  	* @param options.omitTypeAnnotations set true to omit inferred type annotations.  Caller beware: with this option set, the parsed expression's type will NOT satisfy `expectedType` if it would normally be wrapped in an inferred annotation.
+  	* @private
+  	*/
+  	parse(expr, index, expectedType, bindings, options = {}) {
+  		if (index != null) return this.concat(index, expectedType, bindings)._parse(expr, options);
+  		return this._parse(expr, options);
+  	}
+  	_parse(expr, options) {
+  		if (expr === null || typeof expr === "string" || typeof expr === "boolean" || typeof expr === "number") expr = ["literal", expr];
+  		const key = this.key;
+  		function annotate(parsed, type, typeAnnotation) {
+  			if (typeAnnotation === "assert") return new Assertion(type, [parsed], key);
+  			else if (typeAnnotation === "coerce") return new Coercion(type, [parsed], key);
+  			else return parsed;
+  		}
+  		if (Array.isArray(expr)) {
+  			if (expr.length === 0) return this.error("Expected an array with at least one element. If you wanted a literal array, use [\"literal\", []].");
+  			const op = expr[0];
+  			if (typeof op !== "string") {
+  				this.error(`Expression name must be a string, but found ${typeof op} instead. If you wanted a literal array, use ["literal", [...]].`, 0);
+  				return null;
+  			}
+  			const Expr = this.registry[op];
+  			if (Expr) {
+  				let parsed = Expr.parse(expr, this);
+  				if (!parsed) return null;
+  				if (this.expectedType) {
+  					const expected = this.expectedType;
+  					const actual = parsed.type;
+  					if ((expected.kind === "string" || expected.kind === "number" || expected.kind === "boolean" || expected.kind === "object" || expected.kind === "array") && actual.kind === "value") parsed = annotate(parsed, expected, options.typeAnnotation || "assert");
+  					else if ("projectionDefinition" === expected.kind && [
+  						"string",
+  						"array",
+  						"value"
+  					].includes(actual.kind) || [
+  						"color",
+  						"formatted",
+  						"resolvedImage"
+  					].includes(expected.kind) && ["value", "string"].includes(actual.kind) || ["padding", "numberArray"].includes(expected.kind) && [
+  						"value",
+  						"number",
+  						"array"
+  					].includes(actual.kind) || "colorArray" === expected.kind && [
+  						"value",
+  						"string",
+  						"array"
+  					].includes(actual.kind) || "variableAnchorOffsetCollection" === expected.kind && ["value", "array"].includes(actual.kind)) parsed = annotate(parsed, expected, options.typeAnnotation || "coerce");
+  					else if (this.checkSubtype(expected, actual)) return null;
+  				}
+  				if (!(parsed instanceof Literal) && parsed.type.kind !== "resolvedImage" && this._isConstant(parsed)) {
+  					const ec = new EvaluationContext();
+  					try {
+  						parsed = new Literal(parsed.type, parsed.evaluate(ec));
+  					} catch (e) {
+  						this.error(e.message);
+  						return null;
+  					}
+  				}
+  				return parsed;
+  			}
+  			return this.error(`Unknown expression "${op}". If you wanted a literal array, use ["literal", [...]].`, 0);
+  		} else if (typeof expr === "undefined") return this.error("'undefined' value invalid. Use null instead.");
+  		else if (typeof expr === "object") return this.error("Bare objects invalid. Use [\"literal\", {...}] instead.");
+  		else return this.error(`Expected an array, but found ${typeof expr} instead.`);
+  	}
+  	/**
+  	* Returns a copy of this context suitable for parsing the subexpression at
+  	* index `index`, optionally appending to 'let' binding map.
+  	*
+  	* Note that `errors` property, intended for collecting errors while
+  	* parsing, is copied by reference rather than cloned.
+  	* @private
+  	*/
+  	concat(index, expectedType, bindings) {
+  		const path = typeof index === "number" ? this.path.concat(index) : this.path;
+  		const scope = bindings ? this.scope.concat(bindings) : this.scope;
+  		return new ParsingContext(this.registry, this._isConstant, path, expectedType || null, scope, this.errors);
+  	}
+  	/**
+  	* Push a parsing (or type checking) error into the `this.errors`
+  	* @param error The message
+  	* @param keys Optionally specify the source of the error at a child
+  	* of the current expression at `this.key`.
+  	* @private
+  	*/
+  	error(error, ...keys) {
+  		const key = `${this.key}${keys.map((k) => `[${k}]`).join("")}`;
+  		this.errors.push(new ExpressionParsingError(key, error));
+  	}
+  	/**
+  	* Returns null if `t` is a subtype of `expected`; otherwise returns an
+  	* error message and also pushes it to `this.errors`.
+  	* @param expected The expected type
+  	* @param t The actual type
+  	* @returns null if `t` is a subtype of `expected`; otherwise returns an error message
+  	*/
+  	checkSubtype(expected, t) {
+  		const error = checkSubtype(expected, t);
+  		if (error) this.error(error);
+  		return error;
+  	}
+  };
+
   //#region src/expression/compound_expression.ts
   var CompoundExpression = class CompoundExpression {
   	constructor(name, type, evaluate, args, key) {
@@ -4685,21 +4716,7 @@
   	});
   	return result;
   }
-  //#endregion
-  //#region src/util/result.ts
-  function success(value) {
-  	return {
-  		result: "success",
-  		value
-  	};
-  }
-  function error(value) {
-  	return {
-  		result: "error",
-  		value
-  	};
-  }
-  //#endregion
+
   //#region src/util/properties.ts
   function supportsPropertyExpression(spec) {
   	return spec["property-type"] === "data-driven" || spec["property-type"] === "cross-faded-data-driven";
@@ -4710,13 +4727,13 @@
   function supportsInterpolation(spec) {
   	return !!spec.expression && spec.expression.interpolated;
   }
-  //#endregion
+
   //#region src/util/extend.ts
   function extendBy(output, ...inputs) {
   	for (const input of inputs) for (const k in input) output[k] = input[k];
   	return output;
   }
-  //#endregion
+
   //#region src/util/get_type.ts
   function getType(val) {
   	if (val instanceof Number) return "number";
@@ -4726,7 +4743,7 @@
   	else if (val === null) return "null";
   	else return typeof val;
   }
-  //#endregion
+
   //#region src/function/index.ts
   function isFunction(value) {
   	return typeof value === "object" && value !== null && !Array.isArray(value) && typeOf(value) === ObjectType;
@@ -4824,21 +4841,21 @@
   		kind: "source",
   		evaluate(_, feature) {
   			const value = feature && feature.properties ? feature.properties[parameters.property] : void 0;
-  			if (value === void 0) return coalesce$1(parameters.default, propertySpec.default);
+  			if (value === void 0) return coalesce(parameters.default, propertySpec.default);
   			return innerFun(parameters, propertySpec, value, hashedStops, categoricalKeyType);
   		}
   	};
   }
-  function coalesce$1(a, b, c) {
+  function coalesce(a, b, c) {
   	if (a !== void 0) return a;
   	if (b !== void 0) return b;
   	if (c !== void 0) return c;
   }
   function evaluateCategoricalFunction(parameters, propertySpec, input, hashedStops, keyType) {
-  	return coalesce$1(typeof input === keyType ? hashedStops[input] : void 0, parameters.default, propertySpec.default);
+  	return coalesce(typeof input === keyType ? hashedStops[input] : void 0, parameters.default, propertySpec.default);
   }
   function evaluateIntervalFunction(parameters, propertySpec, input) {
-  	if (getType(input) !== "number") return coalesce$1(parameters.default, propertySpec.default);
+  	if (getType(input) !== "number") return coalesce(parameters.default, propertySpec.default);
   	const n = parameters.stops.length;
   	if (n === 1) return parameters.stops[0][1];
   	if (input <= parameters.stops[0][0]) return parameters.stops[0][1];
@@ -4848,7 +4865,7 @@
   }
   function evaluateExponentialFunction(parameters, propertySpec, input) {
   	const base = parameters.base !== void 0 ? parameters.base : 1;
-  	if (getType(input) !== "number") return coalesce$1(parameters.default, propertySpec.default);
+  	if (getType(input) !== "number") return coalesce(parameters.default, propertySpec.default);
   	const n = parameters.stops.length;
   	if (n === 1) return parameters.stops[0][1];
   	if (input <= parameters.stops[0][0]) return parameters.stops[0][1];
@@ -4888,7 +4905,7 @@
   			break;
   		default: if (getType(input) !== propertySpec.type && (propertySpec.type !== "enum" || !propertySpec.values[input])) input = void 0;
   	}
-  	return coalesce$1(input, parameters.default, propertySpec.default);
+  	return coalesce(input, parameters.default, propertySpec.default);
   }
   /**
   * Returns a ratio that can be used to interpolate between exponential function
@@ -4935,7 +4952,21 @@
   	else if (base === 1) return progress / difference;
   	else return (Math.pow(base, progress) - 1) / (Math.pow(base, difference) - 1);
   }
-  //#endregion
+
+  //#region src/util/result.ts
+  function success(value) {
+  	return {
+  		result: "success",
+  		value
+  	};
+  }
+  function error(value) {
+  	return {
+  		result: "error",
+  		value
+  	};
+  }
+
   //#region src/expression/index.ts
   var StyleExpression = class {
   	constructor(expression, rootKey, propertySpec, globalState) {
@@ -5220,7 +5251,7 @@
   		globalState
   	};
   }
-  //#endregion
+
   //#region src/feature_filter/index.ts
   function classifyChildren(children) {
   	let sawLegacy = false;
@@ -5256,7 +5287,7 @@
   function isExpressionFilter(filter) {
   	return classifyFilter(filter) !== "legacy";
   }
-  //#endregion
+
   //#region src/index.ts
   const expression = {
   	StyleExpression,
@@ -5546,6 +5577,11 @@
       minzoom
     );
 
+    return this.tilesForZoom(practicalZoom);
+  };
+
+  // Enumerates the tiles covering the current viewport at a given tile zoom.
+  Layer.prototype.tilesForZoom = function tilesForZoom (practicalZoom) {
     var bounds = this.map.getBounds();
     var tileCount = Math.pow( 2, practicalZoom );
 
@@ -5787,9 +5823,9 @@
 
   function sampleFill (options) { return new SampleFill(options); }
 
-  var particleUpdate = function (gl) { return createProgram(gl, "precision highp float;attribute vec2 a_pos;varying vec2 h;void main(){h=a_pos,gl_Position=vec4(1.-2.*a_pos,0,1);}const vec3 f=vec3(12.9898,78.233,4375.85453);", "precision highp float;vec2 g(vec2 b,mat4 c){vec4 a=c*vec4(b,1,1);return a.xy/a.w;}uniform sampler2D u_particles,u_wind_top_left,u_wind_top_center,u_wind_top_right,u_wind_middle_left,u_wind_middle_center,u_wind_middle_right,u_wind_bottom_left,u_wind_bottom_center,u_wind_bottom_right;uniform vec2 u_wind_res,u_wind_min,u_wind_max;uniform bool u_initialize;uniform mat4 u_data_matrix;uniform float u_rand_seed,u_speed_factor,u_drop_rate,u_drop_rate_bump;varying vec2 h;const vec3 f=vec3(12.9898,78.233,4375.85453);float i(const vec2 b){float a=dot(f.xy,b);return fract(sin(a)*(f.z+a));}vec2 d(const vec2 a){return a.x>1.&&a.y>1.?texture2D(u_wind_bottom_right,a-vec2(1,1)).rg:a.x>0.&&a.y>1.?texture2D(u_wind_bottom_center,a-vec2(0,1)).rg:a.y>1.?texture2D(u_wind_bottom_left,a-vec2(-1,1)).rg:a.x>1.&&a.y>0.?texture2D(u_wind_middle_right,a-vec2(1,0)).rg:a.x>0.&&a.y>0.?texture2D(u_wind_middle_center,a-vec2(0,0)).rg:a.y>0.?texture2D(u_wind_middle_left,a-vec2(-1,0)).rg:a.x>1.?texture2D(u_wind_top_right,a-vec2(1,-1)).rg:a.x>0.?texture2D(u_wind_top_center,a-vec2(0,-1)).rg:texture2D(u_wind_top_left,a-vec2(-1,-1)).rg;}vec2 p(const vec2 e){vec2 a=1./u_wind_res,b=floor(e*u_wind_res)*a,c=fract(e*u_wind_res),j=d(b),k=d(b+vec2(a.x,0)),l=d(b+vec2(0,a.y)),m=d(b+a);return mix(mix(j,k,c.x),mix(l,m,c.x),c.y);}vec2 o(vec2 a){vec2 e=g(a,u_data_matrix),b=mix(u_wind_min,u_wind_max,p(e));float j=length(b)/length(u_wind_max);vec2 k=vec2(b.x,-b.y)*1e-4*u_speed_factor;a=fract(1.+a+k);vec2 c=(a+h)*u_rand_seed;float l=u_drop_rate+j*u_drop_rate_bump+smoothstep(.24,.5,length(a-vec2(.5,.5))*.7),m=step(1.-l,i(c));vec2 q=vec2(.5*i(c+1.3)+.25,.5*i(c+2.1)+.25);return mix(a,q,m);}void main(){vec4 b=texture2D(u_particles,h);vec2 a=vec2(b.r/255.+b.b,b.g/255.+b.a);a=o(a);if(u_initialize)for(int c=0;c<100;c++)a=o(a);gl_FragColor=vec4(fract(a*255.),floor(a*255.)/255.);}"); };
+  var particleUpdate = function (gl) { return createProgram(gl, "precision highp float;attribute vec2 a_pos;varying vec2 l;void main(){l=a_pos,gl_Position=vec4(1.-2.*a_pos,0,1);}const vec3 j=vec3(12.9898,78.233,4375.85453);", "precision highp float;vec2 k(vec2 b,mat4 c){vec4 a=c*vec4(b,1,1);return a.xy/a.w;}uniform vec2 u_wind_res,u_wind_min,u_wind_max;uniform mat4 u_data_matrix;uniform sampler2D u_particles,u_wind_top_left,u_wind_top_center,u_wind_top_right,u_wind_middle_left,u_wind_middle_center,u_wind_middle_right,u_wind_bottom_left,u_wind_bottom_center,u_wind_bottom_right;uniform bool u_initialize;uniform float u_rand_seed,u_speed_factor,u_drop_rate,u_drop_rate_bump;varying vec2 l;const vec3 j=vec3(12.9898,78.233,4375.85453);float n(const vec2 b){float a=dot(j.xy,b);return fract(sin(a)*(j.z+a));}vec2 e(const vec2 a){return a.x>1.&&a.y>1.?texture2D(u_wind_bottom_right,a-vec2(1,1)).rg:a.x>0.&&a.y>1.?texture2D(u_wind_bottom_center,a-vec2(0,1)).rg:a.y>1.?texture2D(u_wind_bottom_left,a-vec2(-1,1)).rg:a.x>1.&&a.y>0.?texture2D(u_wind_middle_right,a-vec2(1,0)).rg:a.x>0.&&a.y>0.?texture2D(u_wind_middle_center,a-vec2(0,0)).rg:a.y>0.?texture2D(u_wind_middle_left,a-vec2(-1,0)).rg:a.x>1.?texture2D(u_wind_top_right,a-vec2(1,-1)).rg:a.x>0.?texture2D(u_wind_top_center,a-vec2(0,-1)).rg:texture2D(u_wind_top_left,a-vec2(-1,-1)).rg;}vec2 t(const vec2 d){vec2 a=1./u_wind_res,b=floor(d*u_wind_res)*a,c=fract(d*u_wind_res),f=e(b),g=e(b+vec2(a.x,0)),h=e(b+vec2(0,a.y)),i=e(b+a);return mix(mix(f,g,c.x),mix(h,i,c.x),c.y);}vec2 p(vec2 a){vec2 d=k(a,u_data_matrix),b=mix(u_wind_min,u_wind_max,t(d));float f=length(b)/length(u_wind_max);vec2 g=vec2(b.x,-b.y)*1e-4*u_speed_factor;a=fract(1.+a+g);vec2 c=(a+l)*u_rand_seed;float h=u_drop_rate+f*u_drop_rate_bump+smoothstep(.24,.5,length(a-vec2(.5,.5))*.7),i=step(1.-h,n(c));vec2 m=vec2(.5*n(c+1.3)+.25,.5*n(c+2.1)+.25);return mix(a,m,i);}void main(){vec4 b=texture2D(u_particles,l);vec2 a=vec2(b.r/255.+b.b,b.g/255.+b.a);a=p(a);if(u_initialize)for(int c=0;c<100;c++)a=p(a);gl_FragColor=vec4(fract(a*255.),floor(a*255.)/255.);}"); };
 
-  var particleDraw = function (gl) { return createProgram(gl, "precision highp float;vec2 r(vec2 b){float a=-180.*b.y+90.;a=(180.-57.29578*log(tan(.785398+a*3.141593/360.)))/360.;return vec2(b.x,a);}vec2 g(vec2 b,mat4 c){vec4 a=c*vec4(b,1,1);return a.xy/a.w;}uniform sampler2D u_particles;uniform mat4 u_matrix,u_offset;uniform float u_particles_res,u_particle_size;const vec3 f=vec3(12.9898,78.233,4375.85453);attribute float a_index;varying vec2 n;void main(){vec4 a=texture2D(u_particles,vec2(fract(a_index/u_particles_res),floor(a_index/u_particles_res)/u_particles_res));vec2 b=vec2(a.r/255.+a.b,a.g/255.+a.a),c=g(b,u_offset),e=r(c);n=b,gl_PointSize=u_particle_size,gl_Position=u_matrix*vec4(e,0,1);}", "precision highp float;vec2 g(vec2 b,mat4 c){vec4 a=c*vec4(b,1,1);return a.xy/a.w;}uniform sampler2D u_wind_top_left,u_wind_top_center,u_wind_top_right,u_wind_middle_left,u_wind_middle_center,u_wind_middle_right,u_wind_bottom_left,u_wind_bottom_center,u_wind_bottom_right,u_color_ramp;uniform vec2 u_wind_min,u_wind_max;uniform mat4 u_data_matrix;const vec3 f=vec3(12.9898,78.233,4375.85453);vec2 d(const vec2 a){return a.x>1.&&a.y>1.?texture2D(u_wind_bottom_right,a-vec2(1,1)).rg:a.x>0.&&a.y>1.?texture2D(u_wind_bottom_center,a-vec2(0,1)).rg:a.y>1.?texture2D(u_wind_bottom_left,a-vec2(-1,1)).rg:a.x>1.&&a.y>0.?texture2D(u_wind_middle_right,a-vec2(1,0)).rg:a.x>0.&&a.y>0.?texture2D(u_wind_middle_center,a-vec2(0,0)).rg:a.y>0.?texture2D(u_wind_middle_left,a-vec2(-1,0)).rg:a.x>1.?texture2D(u_wind_top_right,a-vec2(1,-1)).rg:a.x>0.?texture2D(u_wind_top_center,a-vec2(0,-1)).rg:texture2D(u_wind_top_left,a-vec2(-1,-1)).rg;}varying vec2 n;void main(){vec2 b=mix(u_wind_min,u_wind_max,d(g(n,u_data_matrix)));float a=length(b)/length(u_wind_max);vec2 c=vec2(fract(16.*a),floor(16.*a)/16.);gl_FragColor=texture2D(u_color_ramp,c);}"); };
+  var particleDraw = function (gl) { return createProgram(gl, "precision highp float;vec2 u(vec2 b){float a=-180.*b.y+90.;a=(180.-57.29578*log(tan(.785398+a*3.141593/360.)))/360.;return vec2(b.x,a);}vec2 k(vec2 b,mat4 c){vec4 a=c*vec4(b,1,1);return a.xy/a.w;}uniform mat4 u_matrix,u_offset;uniform sampler2D u_particles,u_terrain;uniform bool u_terrain_enabled;uniform vec4 u_terrain_bounds;uniform float u_particles_res,u_particle_size,u_particle_altitude,u_terrain_size;const vec3 j=vec3(12.9898,78.233,4375.85453);attribute float a_index;varying vec2 o;void main(){vec4 b=texture2D(u_particles,vec2(fract(a_index/u_particles_res),floor(a_index/u_particles_res)/u_particles_res));vec2 f=vec2(b.r/255.+b.b,b.g/255.+b.a),g=k(f,u_offset),h=u(g);o=f;float i=u_particle_altitude;if(u_terrain_enabled){vec2 a=(h-u_terrain_bounds.xy)/(u_terrain_bounds.zw-u_terrain_bounds.xy);a.y=1.-a.y;vec2 c=(floor(a*u_terrain_size-.5)+.5)/u_terrain_size,d=vec2(1./u_terrain_size);vec4 m=texture2D(u_terrain,c),q=texture2D(u_terrain,c+vec2(d.x,0.)),r=texture2D(u_terrain,c+vec2(0.,d.y)),s=texture2D(u_terrain,c+d);if(min(min(m.a,q.a),min(r.a,s.a))<.5||a.x<0.||a.x>1.||a.y<0.||a.y>1.){gl_Position=vec4(2.,2.,2.,1.),gl_PointSize=u_particle_size;return;}i+=max(max(m.r,q.r),max(r.r,s.r));}float v=(90.-180.*g.y)*.017453,w=i/(40030228.884*cos(v));gl_PointSize=u_particle_size,gl_Position=u_matrix*vec4(h,w,1);}", "precision highp float;vec2 k(vec2 b,mat4 c){vec4 a=c*vec4(b,1,1);return a.xy/a.w;}uniform vec2 u_wind_min,u_wind_max;uniform mat4 u_data_matrix;uniform sampler2D u_wind_top_left,u_wind_top_center,u_wind_top_right,u_wind_middle_left,u_wind_middle_center,u_wind_middle_right,u_wind_bottom_left,u_wind_bottom_center,u_wind_bottom_right,u_color_ramp;const vec3 j=vec3(12.9898,78.233,4375.85453);vec2 e(const vec2 a){return a.x>1.&&a.y>1.?texture2D(u_wind_bottom_right,a-vec2(1,1)).rg:a.x>0.&&a.y>1.?texture2D(u_wind_bottom_center,a-vec2(0,1)).rg:a.y>1.?texture2D(u_wind_bottom_left,a-vec2(-1,1)).rg:a.x>1.&&a.y>0.?texture2D(u_wind_middle_right,a-vec2(1,0)).rg:a.x>0.&&a.y>0.?texture2D(u_wind_middle_center,a-vec2(0,0)).rg:a.y>0.?texture2D(u_wind_middle_left,a-vec2(-1,0)).rg:a.x>1.?texture2D(u_wind_top_right,a-vec2(1,-1)).rg:a.x>0.?texture2D(u_wind_top_center,a-vec2(0,-1)).rg:texture2D(u_wind_top_left,a-vec2(-1,-1)).rg;}varying vec2 o;void main(){vec2 b=mix(u_wind_min,u_wind_max,e(k(o,u_data_matrix)));float a=length(b)/length(u_wind_max);vec2 c=vec2(fract(16.*a),floor(16.*a)/16.);gl_FragColor=texture2D(u_color_ramp,c);}"); };
 
   /**
    * This layer simulates a particles system where the particles move according
@@ -5839,6 +5875,16 @@
             },
             "property-type": "data-constant"
           },
+          "particle-altitude": {
+            type: "number",
+            minimum: 0,
+            default: 0,
+            expression: {
+              interpolated: true,
+              parameters: ["zoom"]
+            },
+            "property-type": "data-constant"
+          },
           "number-particles": {
             type: "number",
             minimum: 1,
@@ -5855,7 +5901,17 @@
         options
       );
       this.pixelToGridRatio = 20;
+      // Opt in at construction: MapLibre chooses the depth mode before render().
+      this.particleTerrain = !!options && options["particle-terrain"] === true;
+      if (this.particleTerrain) { this.renderingMode = "3d"; }
+      this.terrainMapSize = 256;
+      this.terrainBounds = [0, 0, 1, 1];
+      this._terrainRevision = 0;
       this.tileSize = 1024;
+      // Particle tiles may overzoom well past the data: the wind field is
+      // interpolated, and a finer grid is what keeps particles inside the viewport
+      // at high map zooms.
+      this.maxParticleZoom = 20;
 
       this.dropRate = 0.003; // how often the particles move to a random place
       this.dropRateBump = 0.01; // drop rate increase relative to individual particle speed
@@ -5870,11 +5926,27 @@
     Particles.prototype = Object.create( Layer && Layer.prototype );
     Particles.prototype.constructor = Particles;
 
+    /**
+     * Picks the zoom level for the particle simulation grid, so that one particle
+     * tile covers roughly `tileSize * 2` screen pixels.
+     *
+     * MapLibre's world is `512 * 2^zoom` pixels across, so:
+     *     2^particleZoom = worldPixels / (tileSize * 2)
+     *
+     * This has to track the map zoom, because the simulation works in coordinates
+     * relative to the tile: a tile that is much larger than the viewport both spreads
+     * the particles too thinly to see and makes them appear to move far too fast.
+     * (The original heuristic, `canvas height * zoom`, stops tracking above roughly
+     * zoom 6 and the layer goes blank.)
+     */
+    Particles.prototype.particleTileZoom = function particleTileZoom () {
+      var worldPixels = 512 * Math.pow( 2, this.map.getZoom() );
+      var zoom = Math.log2(worldPixels / (this.tileSize * 2));
+      return Math.max(0, Math.min(this.maxParticleZoom, Math.floor(zoom)));
+    };
+
     Particles.prototype.visibleParticleTiles = function visibleParticleTiles () {
-      return this.computeVisibleTiles(2, this.tileSize, {
-        minzoom: 0,
-        maxzoom: this.windData.maxzoom + 3 // how much overzoom to allow?
-      });
+      return this.tilesForZoom(this.particleTileZoom());
     };
 
     Particles.prototype.setParticleColor = function setParticleColor (expr) {
@@ -5901,6 +5973,7 @@
         var state = this$1$1._particleTiles[key];
         this$1$1.gl.deleteTexture(state.particleStateTexture0);
         this$1$1.gl.deleteTexture(state.particleStateTexture1);
+        if (state.terrainTexture) { this$1$1.gl.deleteTexture(state.terrainTexture); }
         delete this$1$1._particleTiles[key];
       });
     };
@@ -5935,6 +6008,7 @@
           var state = this$1$1._particleTiles[tile];
           this$1$1.gl.deleteTexture(state.particleStateTexture0);
           this$1$1.gl.deleteTexture(state.particleStateTexture1);
+          if (state.terrainTexture) { this$1$1.gl.deleteTexture(state.terrainTexture); }
           delete this$1$1._particleTiles[tile];
         }
       });
@@ -5988,6 +6062,73 @@
       this.nullTile = {
         getTexture: function () { return this$1$1.nullTexture; }
       };
+      this.terrainSupported = this.particleTerrain && !!gl.texStorage2D &&
+        !!gl.getExtension("EXT_color_buffer_float");
+      if (this.particleTerrain) {
+        this._invalidateTerrain = function () { this$1$1._terrainRevision++; };
+        for (var i = 0, list = ["move", "sourcedata", "terrain"]; i < list.length; i += 1) {
+          var event = list[i];
+
+          map.on(event, this._invalidateTerrain);
+        }
+      }
+    };
+
+    Particles.prototype.updateTerrain = function updateTerrain (gl, args, tile, state) {
+      this.terrainActive = this.particleTerrain && !!this.map.getTerrain();
+      this.terrainReady = !this.terrainActive;
+      if (!this.terrainActive) { return; }
+      if (!this.terrainSupported || !args || !args.renderTerrainHeightMap) {
+        if (!this._terrainWarning) {
+          console.warn("windgl: terrain particles require MapLibre 6.13+ and EXT_color_buffer_float; particles are hidden while terrain is enabled.");
+          this._terrainWarning = true;
+        }
+        return;
+      }
+      if (state.terrainRevision === this._terrainRevision) {
+        this.terrainReady = true;
+        return;
+      }
+      if (!state.terrainTexture) {
+        state.terrainTexture = gl.createTexture();
+        bindTexture(gl, state.terrainTexture, 11);
+        gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA32F, this.terrainMapSize, this.terrainMapSize);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      }
+      var offset = tile.viewMatrix(2);
+      var mercatorY = function (y) {
+        var latitude = 90 - 180 * y;
+        var radians = Math.max(-85.051129, Math.min(85.051129, latitude)) * Math.PI / 180;
+        return (1 - Math.log(Math.tan(Math.PI / 4 + radians / 2)) / Math.PI) / 2;
+      };
+      // Local height maps retain mountain detail even when a low camera angle
+      // stretches the viewport bounds far towards the horizon.
+      state.terrainBounds = [
+        offset[12], mercatorY(offset[13]),
+        offset[12] + offset[0], mercatorY(offset[13] + offset[5])
+      ];
+      args.renderTerrainHeightMap({
+        texture: state.terrainTexture, width: this.terrainMapSize,
+        height: this.terrainMapSize, bounds: state.terrainBounds
+      });
+      state.terrainRevision = this._terrainRevision;
+      this.terrainReady = true;
+    };
+
+    Particles.prototype.onRemove = function onRemove (map) {
+      if (this._invalidateTerrain) {
+        for (var i = 0, list = ["move", "sourcedata", "terrain"]; i < list.length; i += 1) {
+          var event = list[i];
+
+          map.off(event, this._invalidateTerrain);
+        }
+        delete this._invalidateTerrain;
+      }
+      if (this.gl) { this.dropParticleTiles(); }
+      Layer.prototype.onRemove.call(this, map);
     };
 
     // This is a callback from mapbox for rendering into a texture
@@ -5996,17 +6137,33 @@
 
       if (this.windData) {
         if (isUnsupportedProjection(args)) { return; }
-        var blendingEnabled = gl.isEnabled(gl.BLEND);
-        gl.disable(gl.BLEND);
+        var capabilities = [gl.BLEND, gl.DEPTH_TEST, gl.STENCIL_TEST, gl.CULL_FACE, gl.SCISSOR_TEST];
+        var enabled = capabilities.map(function (capability) { return gl.isEnabled(capability); });
+        var framebuffer = gl.getParameter(gl.FRAMEBUFFER_BINDING);
+        var viewport = gl.getParameter(gl.VIEWPORT);
+        var colorMask = gl.getParameter(gl.COLOR_WRITEMASK);
+        gl.colorMask(true, true, true, true);
         var tiles = this.visibleParticleTiles();
         tiles.forEach(function (tile) {
           var found = this$1$1.findAssociatedDataTiles(tile);
           if (found) {
+            this$1$1.updateTerrain(gl, args, tile, this$1$1._particleTiles[tile]);
+            // The height-map renderer uses MapLibre's VAOs and depth/stencil state.
+            // Simulation draws into its own texture, not into the terrain.
+            if (gl.bindVertexArray) { gl.bindVertexArray(null); }
+            capabilities.forEach(function (capability) { return gl.disable(capability); });
+            gl.colorMask(true, true, true, true);
             this$1$1.update(gl, this$1$1._particleTiles[tile], found);
             this$1$1._particleTiles[tile].updated = true;
           }
         });
-        if (blendingEnabled) { gl.enable(gl.BLEND); }
+        gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+        gl.viewport.apply(gl, viewport);
+        gl.colorMask.apply(gl, colorMask);
+        capabilities.forEach(function (capability, i) {
+          if (enabled[i]) { gl.enable(capability); }
+          else { gl.disable(capability); }
+        });
         this.map.triggerRepaint();
       }
     };
@@ -6174,6 +6331,7 @@
 
       if (this.windData) {
         if (this.warnOnUnsupportedProjection(args)) { return; }
+        if (this.terrainActive && !this.terrainReady) { return; }
         var matrix = customLayerMatrix(args);
         this.visibleParticleTiles().forEach(function (tile) {
           var found = this$1$1.findAssociatedDataTiles(tile);
@@ -6204,6 +6362,7 @@
       bindTexture(gl, data.tileBottomCenter.getTexture(gl), 8);
       bindTexture(gl, data.tileBottomRight.getTexture(gl), 9);
       bindTexture(gl, this.colorRampTexture, 10);
+      bindTexture(gl, tile.terrainTexture || this.nullTexture, 11);
 
       bindAttribute(gl, this.particleIndexBuffer, program.a_index, 1);
 
@@ -6218,6 +6377,11 @@
       gl.uniform1i(program.u_wind_bottom_center, 8);
       gl.uniform1i(program.u_wind_bottom_right, 9);
       gl.uniform1i(program.u_color_ramp, 10);
+      gl.uniform1i(program.u_terrain, 11);
+      gl.uniform1i(program.u_terrain_enabled, +!!this.terrainActive);
+      gl.uniform4fv(program.u_terrain_bounds, tile.terrainBounds || this.terrainBounds);
+      gl.uniform1f(program.u_terrain_size, this.terrainMapSize);
+      gl.uniform1f(program.u_particle_altitude, this.particleAltitude);
 
       gl.uniform1f(program.u_particles_res, this.particleStateResolution);
 

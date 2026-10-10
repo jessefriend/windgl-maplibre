@@ -3,7 +3,7 @@
 <head>
 <title>WebGL wind simulation</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<link href="https://cdn.jsdelivr.net/npm/maplibre-gl@6.1.0/dist/maplibre-gl.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/maplibre-gl@6.13.0/dist/maplibre-gl.css" rel="stylesheet" />
 <style>
 body { margin: 0; padding: 0; overflow: hidden;}
 .map { display: block; width: 100vw; height: 100vh; position: absolute !important; top: 0;  }
@@ -19,13 +19,18 @@ body { margin: 0; padding: 0; overflow: hidden;}
     padding: 10px 0; cursor: pointer;
     margin: auto;
 }
+#preset-name {
+    position: absolute; bottom: 105px; left: 0; right: 0;
+    text-align: center; color: white; font: 14px sans-serif;
+    text-shadow: 0 1px 3px black; pointer-events: none;
+}
 </style>
 <!-- MapLibre >= 6 is ESM-only, so the demo bundle is an ES module and the bare
      "maplibre-gl" specifier is resolved here. -->
 <script type="importmap">
 {
   "imports": {
-    "maplibre-gl": "https://cdn.jsdelivr.net/npm/maplibre-gl@6.1.0/dist/maplibre-gl.mjs"
+    "maplibre-gl": "https://cdn.jsdelivr.net/npm/maplibre-gl@6.13.0/dist/maplibre-gl.mjs"
   }
 }
 </script>
@@ -33,6 +38,7 @@ body { margin: 0; padding: 0; overflow: hidden;}
 <body>
 <div id="map1" class="map"></div>
 <div id="map2" class="map"></div>
+<div id="preset-name" aria-live="polite"></div>
 <button id="next">Next Style</button>
 <script type="module" src="./index.js"></script>
 </body>

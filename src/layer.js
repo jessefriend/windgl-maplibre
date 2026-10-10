@@ -191,6 +191,11 @@ export default class Layer {
       minzoom
     );
 
+    return this.tilesForZoom(practicalZoom);
+  }
+
+  // Enumerates the tiles covering the current viewport at a given tile zoom.
+  tilesForZoom(practicalZoom) {
     const bounds = this.map.getBounds();
     const tileCount = 2 ** practicalZoom;
 

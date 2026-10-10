@@ -11,9 +11,26 @@ var map1, map2;
 
 // use a MapLibre-compatible style everywhere
 var STYLE = "https://demotiles.maplibre.org/style.json";
+var WIND_SOURCE = "wind/gfs/2026100700/tile.json";
+var TERRAIN_SOURCE = "https://tiles.mapterhorn.com/tilejson.json";
+var TERRAIN_STYLE = {
+  version: 8,
+  sources: {
+    osm: {
+      type: "raster",
+      tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+      tileSize: 256,
+      maxzoom: 19,
+      attribution: "&copy; OpenStreetMap contributors"
+    }
+  },
+  layers: [{ id: "basemap", type: "raster", source: "osm" }]
+};
 
 var configs = [
   {
+    id: "world",
+    name: "World wind: fill and particles",
     style: STYLE,
     layers: [
       { type: "sampleFill", after: null },
@@ -22,6 +39,8 @@ var configs = [
     flyTo: { zoom: 2 }
   },
   {
+    id: "arrows",
+    name: "World wind: arrows",
     style: STYLE,
     layers: [
       {
@@ -46,6 +65,8 @@ var configs = [
     flyTo: { pitch: 30, zoom: 2.5, center: [0, 45] }
   },
   {
+    id: "particles",
+    name: "World wind: particles",
     style: STYLE,
     layers: [
       {
@@ -77,6 +98,8 @@ var configs = [
     flyTo: { zoom: 2, center: [50, -10] }
   },
   {
+    id: "fill",
+    name: "World wind: fill and arrows",
     style: STYLE,
     layers: [
       {
@@ -119,6 +142,24 @@ var configs = [
       }
     ],
     flyTo: { zoom: 2 }
+  },
+  {
+    id: "terrain",
+    name: "3D terrain: Alps and global wind",
+    style: TERRAIN_STYLE,
+    terrain: true,
+    layers: [{
+      type: "particles",
+      after: null,
+      properties: {
+        "number-particles": 2048,
+        "particle-size": 1.5,
+        "particle-terrain": true,
+        "particle-altitude": 30,
+        "particle-color": "#ffdf70"
+      }
+    }],
+    flyTo: { center: [11.39085, 47.27574], zoom: 11, pitch: 65, bearing: -25 }
   }
 ];
 
@@ -131,10 +172,25 @@ function firstSymbolLayerId(map) {
 }
 
 function initializeConfig(container, cfg) {
-  var map = new maplibregl.Map({ container: container, style: cfg.style });
+  var map = new maplibregl.Map(Object.assign({
+    container: container, style: cfg.style, maxPitch: 85
+  }, cfg.flyTo));
+  map.addControl(new maplibregl.NavigationControl());
   map.on("load", function () {
+    map.setProjection({ type: "mercator" });
     var beforeId = firstSymbolLayerId(map);
-    var source = windGL.source("wind/2025011206/tile.json");
+    if (cfg.terrain) {
+      map.addSource("terrain", {
+        type: "raster-dem", url: TERRAIN_SOURCE, encoding: "terrarium", tileSize: 512
+      });
+      map.addLayer({
+        id: "hillshade", type: "hillshade", source: "terrain",
+        paint: { "hillshade-exaggeration": 0.4 }
+      }, beforeId);
+      map.setTerrain({ source: "terrain", exaggeration: 1.5 });
+      map.addControl(new maplibregl.TerrainControl({ source: "terrain", exaggeration: 1.5 }));
+    }
+    var source = windGL.source(cfg.windSource || WIND_SOURCE);
     cfg.layers.forEach(function (entry) {
       var type = entry.type;
       var after = entry.after;
@@ -144,8 +200,8 @@ function initializeConfig(container, cfg) {
       map.addLayer(layer, before);
       // after: map.addLayer(layer, before);
       if (type === "particles") {
-        window._particles = layer;                 // so you can poke it from DevTools
-        console.log("Particles propertySpec:", Object.keys(layer.propertySpec));
+        map._windParticles = layer;
+        if (map === window._map) window._particles = layer;
       }
     });
   });
@@ -153,6 +209,9 @@ function initializeConfig(container, cfg) {
 }
 
 function nextConfig() {
+  document.getElementById("preset-name").textContent = configs[index].name;
+  window._map = map2;
+  window._particles = map2._windParticles || null;
   mapContainer1.style.left = "-100%";
   mapContainer1.style.transition = "left 1s";
   mapContainer2.style.left = "0";
@@ -170,6 +229,10 @@ function nextConfig() {
 }
 
 var index = 0;
+var requestedStyle = new URLSearchParams(window.location.search).get("style");
+configs.forEach(function (cfg, i) {
+  if (cfg.id === requestedStyle) index = i;
+});
 map2 = initializeConfig(mapContainer2, configs[index]);
 nextConfig();
 document.getElementById("next").addEventListener("click", nextConfig);

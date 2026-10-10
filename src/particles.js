@@ -51,6 +51,16 @@ class Particles extends Layer {
           },
           "property-type": "data-constant"
         },
+        "particle-altitude": {
+          type: "number",
+          minimum: 0,
+          default: 0,
+          expression: {
+            interpolated: true,
+            parameters: ["zoom"]
+          },
+          "property-type": "data-constant"
+        },
         "number-particles": {
           type: "number",
           minimum: 1,
@@ -67,7 +77,17 @@ class Particles extends Layer {
       options
     );
     this.pixelToGridRatio = 20;
+    // Opt in at construction: MapLibre chooses the depth mode before render().
+    this.particleTerrain = !!options && options["particle-terrain"] === true;
+    if (this.particleTerrain) this.renderingMode = "3d";
+    this.terrainMapSize = 256;
+    this.terrainBounds = [0, 0, 1, 1];
+    this._terrainRevision = 0;
     this.tileSize = 1024;
+    // Particle tiles may overzoom well past the data: the wind field is
+    // interpolated, and a finer grid is what keeps particles inside the viewport
+    // at high map zooms.
+    this.maxParticleZoom = 20;
 
     this.dropRate = 0.003; // how often the particles move to a random place
     this.dropRateBump = 0.01; // drop rate increase relative to individual particle speed
@@ -78,11 +98,27 @@ class Particles extends Layer {
     this._particleTiles = {};
   }
 
+  /**
+   * Picks the zoom level for the particle simulation grid, so that one particle
+   * tile covers roughly `tileSize * 2` screen pixels.
+   *
+   * MapLibre's world is `512 * 2^zoom` pixels across, so:
+   *     2^particleZoom = worldPixels / (tileSize * 2)
+   *
+   * This has to track the map zoom, because the simulation works in coordinates
+   * relative to the tile: a tile that is much larger than the viewport both spreads
+   * the particles too thinly to see and makes them appear to move far too fast.
+   * (The original heuristic, `canvas height * zoom`, stops tracking above roughly
+   * zoom 6 and the layer goes blank.)
+   */
+  particleTileZoom() {
+    const worldPixels = 512 * 2 ** this.map.getZoom();
+    const zoom = Math.log2(worldPixels / (this.tileSize * 2));
+    return Math.max(0, Math.min(this.maxParticleZoom, Math.floor(zoom)));
+  }
+
   visibleParticleTiles() {
-    return this.computeVisibleTiles(2, this.tileSize, {
-      minzoom: 0,
-      maxzoom: this.windData.maxzoom + 3 // how much overzoom to allow?
-    });
+    return this.tilesForZoom(this.particleTileZoom());
   }
 
   setParticleColor(expr) {
@@ -107,6 +143,7 @@ class Particles extends Layer {
       const state = this._particleTiles[key];
       this.gl.deleteTexture(state.particleStateTexture0);
       this.gl.deleteTexture(state.particleStateTexture1);
+      if (state.terrainTexture) this.gl.deleteTexture(state.terrainTexture);
       delete this._particleTiles[key];
     });
   }
@@ -139,6 +176,7 @@ class Particles extends Layer {
         const state = this._particleTiles[tile];
         this.gl.deleteTexture(state.particleStateTexture0);
         this.gl.deleteTexture(state.particleStateTexture1);
+        if (state.terrainTexture) this.gl.deleteTexture(state.terrainTexture);
         delete this._particleTiles[tile];
       }
     });
@@ -190,23 +228,102 @@ class Particles extends Layer {
     this.nullTile = {
       getTexture: () => this.nullTexture
     };
+    this.terrainSupported = this.particleTerrain && !!gl.texStorage2D &&
+      !!gl.getExtension("EXT_color_buffer_float");
+    if (this.particleTerrain) {
+      this._invalidateTerrain = () => { this._terrainRevision++; };
+      for (const event of ["move", "sourcedata", "terrain"]) {
+        map.on(event, this._invalidateTerrain);
+      }
+    }
+  }
+
+  updateTerrain(gl, args, tile, state) {
+    this.terrainActive = this.particleTerrain && !!this.map.getTerrain();
+    this.terrainReady = !this.terrainActive;
+    if (!this.terrainActive) return;
+    if (!this.terrainSupported || !args || !args.renderTerrainHeightMap) {
+      if (!this._terrainWarning) {
+        console.warn("windgl: terrain particles require MapLibre 6.13+ and EXT_color_buffer_float; particles are hidden while terrain is enabled.");
+        this._terrainWarning = true;
+      }
+      return;
+    }
+    if (state.terrainRevision === this._terrainRevision) {
+      this.terrainReady = true;
+      return;
+    }
+    if (!state.terrainTexture) {
+      state.terrainTexture = gl.createTexture();
+      util.bindTexture(gl, state.terrainTexture, 11);
+      gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA32F, this.terrainMapSize, this.terrainMapSize);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    }
+    const offset = tile.viewMatrix(2);
+    const mercatorY = y => {
+      const latitude = 90 - 180 * y;
+      const radians = Math.max(-85.051129, Math.min(85.051129, latitude)) * Math.PI / 180;
+      return (1 - Math.log(Math.tan(Math.PI / 4 + radians / 2)) / Math.PI) / 2;
+    };
+    // Local height maps retain mountain detail even when a low camera angle
+    // stretches the viewport bounds far towards the horizon.
+    state.terrainBounds = [
+      offset[12], mercatorY(offset[13]),
+      offset[12] + offset[0], mercatorY(offset[13] + offset[5])
+    ];
+    args.renderTerrainHeightMap({
+      texture: state.terrainTexture, width: this.terrainMapSize,
+      height: this.terrainMapSize, bounds: state.terrainBounds
+    });
+    state.terrainRevision = this._terrainRevision;
+    this.terrainReady = true;
+  }
+
+  onRemove(map) {
+    if (this._invalidateTerrain) {
+      for (const event of ["move", "sourcedata", "terrain"]) {
+        map.off(event, this._invalidateTerrain);
+      }
+      delete this._invalidateTerrain;
+    }
+    if (this.gl) this.dropParticleTiles();
+    super.onRemove(map);
   }
 
   // This is a callback from mapbox for rendering into a texture
   prerender(gl, args) {
     if (this.windData) {
       if (isUnsupportedProjection(args)) return;
-      const blendingEnabled = gl.isEnabled(gl.BLEND);
-      gl.disable(gl.BLEND);
+      const capabilities = [gl.BLEND, gl.DEPTH_TEST, gl.STENCIL_TEST, gl.CULL_FACE, gl.SCISSOR_TEST];
+      const enabled = capabilities.map(capability => gl.isEnabled(capability));
+      const framebuffer = gl.getParameter(gl.FRAMEBUFFER_BINDING);
+      const viewport = gl.getParameter(gl.VIEWPORT);
+      const colorMask = gl.getParameter(gl.COLOR_WRITEMASK);
+      gl.colorMask(true, true, true, true);
       const tiles = this.visibleParticleTiles();
       tiles.forEach(tile => {
         const found = this.findAssociatedDataTiles(tile);
         if (found) {
+          this.updateTerrain(gl, args, tile, this._particleTiles[tile]);
+          // The height-map renderer uses MapLibre's VAOs and depth/stencil state.
+          // Simulation draws into its own texture, not into the terrain.
+          if (gl.bindVertexArray) gl.bindVertexArray(null);
+          capabilities.forEach(capability => gl.disable(capability));
+          gl.colorMask(true, true, true, true);
           this.update(gl, this._particleTiles[tile], found);
           this._particleTiles[tile].updated = true;
         }
       });
-      if (blendingEnabled) gl.enable(gl.BLEND);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+      gl.viewport(...viewport);
+      gl.colorMask(...colorMask);
+      capabilities.forEach((capability, i) => {
+        if (enabled[i]) gl.enable(capability);
+        else gl.disable(capability);
+      });
       this.map.triggerRepaint();
     }
   }
@@ -366,6 +483,7 @@ class Particles extends Layer {
   render(gl, args) {
     if (this.windData) {
       if (this.warnOnUnsupportedProjection(args)) return;
+      if (this.terrainActive && !this.terrainReady) return;
       const matrix = customLayerMatrix(args);
       this.visibleParticleTiles().forEach(tile => {
         const found = this.findAssociatedDataTiles(tile);
@@ -396,6 +514,7 @@ class Particles extends Layer {
     util.bindTexture(gl, data.tileBottomCenter.getTexture(gl), 8);
     util.bindTexture(gl, data.tileBottomRight.getTexture(gl), 9);
     util.bindTexture(gl, this.colorRampTexture, 10);
+    util.bindTexture(gl, tile.terrainTexture || this.nullTexture, 11);
 
     util.bindAttribute(gl, this.particleIndexBuffer, program.a_index, 1);
 
@@ -410,6 +529,11 @@ class Particles extends Layer {
     gl.uniform1i(program.u_wind_bottom_center, 8);
     gl.uniform1i(program.u_wind_bottom_right, 9);
     gl.uniform1i(program.u_color_ramp, 10);
+    gl.uniform1i(program.u_terrain, 11);
+    gl.uniform1i(program.u_terrain_enabled, +!!this.terrainActive);
+    gl.uniform4fv(program.u_terrain_bounds, tile.terrainBounds || this.terrainBounds);
+    gl.uniform1f(program.u_terrain_size, this.terrainMapSize);
+    gl.uniform1f(program.u_particle_altitude, this.particleAltitude);
 
     gl.uniform1f(program.u_particles_res, this.particleStateResolution);
 

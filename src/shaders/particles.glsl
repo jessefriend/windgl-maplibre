@@ -32,6 +32,11 @@ uniform mat4 u_matrix;
 uniform mat4 u_offset;
 
 uniform float u_particle_size;
+uniform float u_particle_altitude;
+uniform sampler2D u_terrain;
+uniform bool u_terrain_enabled;
+uniform vec4 u_terrain_bounds;
+uniform float u_terrain_size;
 
 attribute vec2 a_pos;
 
@@ -142,8 +147,32 @@ export void particleDrawVertex() {
 
     v_particle_pos = relativeCoordsWGS84;
 
+    float altitude = u_particle_altitude;
+    if (u_terrain_enabled) {
+        vec2 uv = (worldCoordsMerc - u_terrain_bounds.xy) / (u_terrain_bounds.zw - u_terrain_bounds.xy);
+        // The height map's first row is its south edge. Sample neighboring
+        // texels conservatively without requiring float-texture filtering.
+        uv.y = 1.0 - uv.y;
+        vec2 origin = (floor(uv * u_terrain_size - 0.5) + 0.5) / u_terrain_size;
+        vec2 stepSize = vec2(1.0 / u_terrain_size);
+        vec4 h00 = texture2D(u_terrain, origin);
+        vec4 h10 = texture2D(u_terrain, origin + vec2(stepSize.x, 0.0));
+        vec4 h01 = texture2D(u_terrain, origin + vec2(0.0, stepSize.y));
+        vec4 h11 = texture2D(u_terrain, origin + stepSize);
+        if (min(min(h00.a, h10.a), min(h01.a, h11.a)) < 0.5 ||
+            uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
+            // Do not place particles at sea level while terrain is loading.
+            gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+            gl_PointSize = u_particle_size;
+            return;
+        }
+        altitude += max(max(h00.r, h10.r), max(h01.r, h11.r));
+    }
+    // Mercator z is conformal: meters depend on the particle's latitude.
+    float latitude = (90.0 - 180.0 * worldCoordsWGS84.y) * 0.01745329252;
+    float z = altitude / (40030228.884 * cos(latitude));
     gl_PointSize = u_particle_size;
-    gl_Position = u_matrix * vec4(worldCoordsMerc, 0, 1);
+    gl_Position = u_matrix * vec4(worldCoordsMerc, z, 1);
 }
 
 export void particleDrawFragment() {
