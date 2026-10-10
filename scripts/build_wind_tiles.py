@@ -16,7 +16,7 @@ Tile scheme:
       lat_bottom = 90  - 180 * (y+1) / 2^z
 
 Requirements:
-  pip install xarray cfgrib numpy pillow
+  pip install xarray cfgrib numpy pillow scipy tqdm
   (Optional auto-download) pip install herbie-data
 
 Typical usage:
@@ -79,8 +79,8 @@ def load_uv_dataset(path_u, path_v, single_path,
                     v_name_guess=("vgrd10m","v10","v","VGRD"),
                     target_res_deg=0.25):
     """
-    Load U/V from GRIB, select 10 m AGL if needed, and ensure result is on a
-    regular lat/lon grid with 1-D axes using griddata.
+    Load U/V from GRIB and select 10 m AGL if needed. Preserve regular 1-D
+    latitude/longitude axes; interpolate scattered grids with griddata.
     Returns U_reg, V_reg as xarray.DataArray with dims ('lat','lon').
     """
 
@@ -158,8 +158,34 @@ def load_uv_dataset(path_u, path_v, single_path,
     Uv = np.array(U.values)
     Vv = np.array(V.values)
 
-    # If lon is 0..360, convert to -180..180
-    lonv = np.where(lonv > 180, lonv - 360, lonv)
+    # Normalize longitude consistently, including the antimeridian.
+    lonv = (lonv + 180.0) % 360.0 - 180.0
+
+    # GFS has separate 1-D coordinate axes, not pairs of scattered points.
+    # Preserve its regular grid instead of flattening incompatible axis lengths.
+    if latv.ndim == 1 and lonv.ndim == 1:
+        lat_order = np.argsort(latv)
+        lon_order = np.argsort(lonv)
+        lat_axis = latv[lat_order]
+        lon_axis = lonv[lon_order]
+        lat_dim = U[lat_name].dims[0]
+        lon_dim = U[lon_name].dims[0]
+        U_reg = U.transpose(lat_dim, lon_dim).values[np.ix_(lat_order, lon_order)]
+        V_reg = V.transpose(lat_dim, lon_dim).values[np.ix_(lat_order, lon_order)]
+
+        # Global grids omit the repeated eastern endpoint. Add it so bilinear
+        # sampling interpolates across the dateline instead of clamping there.
+        spacing = np.median(np.diff(lon_axis))
+        if np.isclose(lon_axis[-1] - lon_axis[0] + spacing, 360.0):
+            lon_axis = np.append(lon_axis, lon_axis[0] + 360.0)
+            U_reg = np.column_stack([U_reg, U_reg[:, 0]])
+            V_reg = np.column_stack([V_reg, V_reg[:, 0]])
+
+        coords = {"lat": lat_axis, "lon": lon_axis}
+        return (
+            xr.DataArray(U_reg, dims=("lat", "lon"), coords=coords, name="U_mps"),
+            xr.DataArray(V_reg, dims=("lat", "lon"), coords=coords, name="V_mps"),
+        )
 
     # Make target regular lat/lon grid covering the data extent
     lat_min, lat_max = float(np.nanmin(latv)), float(np.nanmax(latv))

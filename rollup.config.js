@@ -93,14 +93,25 @@ const basePlugins = [
   commonjs()
 ];
 
+// Only transpile our own source. maplibre-gl-style-spec ships ES2022 (static
+// blocks etc.) which buble's parser cannot read, and any consumer running
+// MapLibre >= 6 is on an ES2022-capable browser anyway.
+const transpile = () =>
+  buble({
+    include: ["src/**", "demo.js"],
+    transforms: { dangerousForOf: true },
+    objectAssign: "Object.assign"
+  });
+
 export default [
-  { // Demo bundle
+  { // Demo bundle - ESM, because MapLibre >= 6 ships no UMD build.
+    // docs/index.html maps the bare "maplibre-gl" specifier via an import map.
     input: "demo.js",
-    output: [{ file: "docs/index.js", format: "iife", globals: { 'maplibre-gl': 'maplibregl' } }],
+    output: [{ file: "docs/index.js", format: "es" }],
     external: ['maplibre-gl'],
     plugins: [
       ...basePlugins,
-      buble({ transforms: { dangerousForOf: true }, objectAssign: "Object.assign" })
+      transpile()
     ]
   },
   { // UMD library
@@ -108,7 +119,7 @@ export default [
     output: [{ file: pkg.browser, format: "umd", name: "windGL" }],
     plugins: [
       ...basePlugins,
-      buble({ transforms: { dangerousForOf: true }, objectAssign: "Object.assign" })
+      transpile()
     ]
   },
   { // CJS + ESM library
@@ -120,7 +131,7 @@ export default [
     external: ["@maplibre/maplibre-gl-style-spec"],
     plugins: [
       ...basePlugins,
-      buble({ transforms: { dangerousForOf: true }, objectAssign: "Object.assign" })
+      transpile()
     ]
   }
 ];

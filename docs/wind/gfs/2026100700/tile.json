@@ -1,0 +1,16 @@
+{
+  "source": "https://nomads.ncep.noaa.gov/",
+  "model": "NOAA GFS 0.25 degree, 10 m wind, analysis",
+  "date": "2026-10-07T00:00:00Z",
+  "tiles": ["{z}/{x}/{y}.png"],
+  "minzoom": 0,
+  "maxzoom": 2,
+  "bounds": [-180, -85.0511, 180, 85.0511],
+  "tileSize": 512,
+  "width": 512,
+  "height": 512,
+  "uMin": -32.861324310302734,
+  "uMax": 27.098676681518555,
+  "vMin": -27.65350914001465,
+  "vMax": 36.23649215698242
+}
